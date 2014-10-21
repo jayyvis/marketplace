@@ -1,0 +1,352 @@
+<?php
+
+/**
+ * Implements hook_form_alter().
+ */
+function bah_mod_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'commerce_checkout_form_review'
+    || $form_id == 'commerce_checkout_form_checkout'
+  ) {
+
+    if (isset($form['commerce_payment'])) {
+      $payment_groups = $form['commerce_payment']['payment_details']['og_credit_group']['#options']['Entity type: node'];
+
+      $spaces_obj = spaces_get_space();
+
+      if (!empty($spaces_obj)) {
+        $space = $spaces_obj->group->nid;
+
+        $node_ids = array();
+
+        foreach ($payment_groups as $payment_key => $payment_group) {
+          $node_ids[str_replace("node|", "", (string) $payment_key)] = $payment_key;
+        }
+
+        if (isset($form['commerce_payment']['payment_details']['og_credit_group']['#options']['Entity type: node'][$node_ids[$space]])) {
+          $value = $form['commerce_payment']['payment_details']['og_credit_group']['#options']['Entity type: node'][$node_ids[$space]];
+
+          $key = array_search($value, $form['commerce_payment']['payment_details']['og_credit_group']['#options']['Entity type: node']);
+
+          if ($key !== FALSE) {
+            $form['commerce_payment']['payment_details']['og_credit_group']['#default_value'] = $key;
+            $form['commerce_payment']['payment_details']['og_credit_group']['#disabled'] = 1;
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_node_insert().
+ */
+function bah_mod_node_insert($node) {
+  bah_mod_node_update($node);
+}
+
+/**
+ * Implements hook_node_update.
+ */
+function bah_mod_node_update($node) {
+  if ($node->type == 'project') {
+    module_load_include("module", "purl");
+    $node->purl = $node->nid;
+    $modifier = array(
+      'id' => $node->nid,
+      'provider' => 'spaces_og',
+      'value' => t($node->nid)
+    );
+    purl_save($modifier);
+  }
+}
+
+/**
+ * Implements hook_token_info().
+ */
+function bah_mod_token_info() {
+  $info['tokens']['spaces']['space'] = array(
+    'name' => t('Spaces Value'),
+    'description' => t('Value from Spaces'),
+  );
+  return $info;
+}
+
+/**
+ * Implements hook_tokens().
+ */
+function bah_mod_tokens($type, $tokens, array $data = array(), array $options = array()) {
+  module_load_include("module", "spaces");
+  $space = spaces_get_space();
+  $replacements = array();
+  if ($type == 'spaces' && isset($space) && !empty($space)) {
+    foreach ($tokens as $name => $original) {
+      switch ($name) {
+        case 'space':
+          $replacements[$original] = $space->group->purl;
+          break;
+      }
+    }
+  }
+  return $replacements;
+}
+
+/**
+ * Implementation of hook_block_info().
+ */
+function bah_mod_block_info() {
+  $blocks = array();
+  $blocks['bah_mod'] = array(
+    'info' => t('Project Budget Block'),
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function bah_mod_block_view($delta = '') {
+  $block = array();
+
+  switch ($delta) {
+    case 'bah_mod':
+      global $user;
+      $title = $total = '';
+
+      if ($result = bah_mod_project_block_bah_mod($user)) {
+        list($title, $total) = $result;
+      }
+
+      $block['subject'] = t($title);
+      $block['content'] = t($total);
+      break;
+  }
+  return $block;
+}
+
+/**
+ * @param $user
+ * @return mixed
+ */
+function bah_mod_project_block_bah_mod($user) {
+  $uid = $user->uid;
+  module_load_include("module", "commerce_cart");
+  module_load_include("module", "commerce_order");
+  module_load_include("module", "commerce");
+  module_load_include("module", "spaces");
+  $space_obj = spaces_get_space();
+
+  if (empty($space_obj)){
+    return FALSE;
+  }
+
+  $title = 'Project Information';
+  if (isset($space_obj->group->title)) {
+    $title = $space_obj->group->title;
+  }
+
+  $array_keys = array('CPUs', 'Memory', 'Storage');
+  $fields_available = array(
+    array(
+      'name' => 'CPUs',
+      'allocated' => 'field_estimated_cpu',
+      'used' => 'field_used_vcpu'
+    ),
+    array(
+      'name' => 'Memory',
+      'allocated' => 'field_estimated_memory',
+      'used' => 'field_used_memory'
+    ),
+    array(
+      'name' => 'Storage',
+      'allocated' => 'field_estimated_storage',
+      'used' => 'field_used_storage'
+    ),
+  );
+
+  $available_items = array();
+
+  foreach ($fields_available as $field_available) {
+    $available_items[$field_available['name']] = bah_mod_allocated_and_used($space_obj, $field_available);
+  }
+
+  if ($order = commerce_cart_order_load($uid)) {
+    commerce_order_calculate_total($order);
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $line_items_array = $order_wrapper->commerce_line_items->value();
+
+    $fields_cart = array(
+      array(
+        'name' => 'CPUs',
+        'field' => 'field_cpu'
+      ),
+      array(
+        'name' => 'Memory',
+        'field' => 'field_memory'
+      ),
+      array(
+        'name' => 'Storage',
+        'field' => 'field_storage'
+      ),
+    );
+
+    $cart_items = array();
+
+    foreach ($fields_cart as $field_cart) {
+      $cart_items[$field_cart['name']] = bah_mod_value_field($field_cart, $line_items_array);
+    }
+
+    $total = '';
+    foreach ($array_keys as $key) {
+      $total .= bah_mod_generate_total($key, $cart_items, $available_items);
+    }
+    return array($title, $total);
+  }
+  else {
+    $total = NULL;
+    return array($title, $total);
+  }
+}
+
+function bah_mod_value_field($field_cart, $line_items_array) {
+
+  $field = $field_cart['field'];
+  $num_total = 0;
+  
+  foreach ($line_items_array as $line_item_single) {
+    $product = commerce_product_load($line_item_single->commerce_product['und'][0]['product_id']);
+    if (isset($product->{$field}['und'][0]['tid'])) {
+      $obj = taxonomy_term_load($product->{$field}['und'][0]['tid']);
+      $value = $obj->name;
+      $num_total += commerce_line_items_quantity(array($line_item_single)) * $value;
+    }
+  }
+
+  return $num_total;
+}
+
+function bah_mod_allocated_and_used($space_obj, $field) {
+  $allocated = $field['allocated'];
+  $used = $field['used'];
+
+  if (isset($space_obj->group->{$allocated}['und']) && !empty($space_obj->group->{$allocated}['und'])) {
+    $allocated_value = $space_obj->group->{$allocated}['und'][0]['value'];
+
+    if ($allocated_value == '--') {
+      $allocated_value = NULL;
+    }
+  }
+
+  if (isset($space_obj->group->{$used}['und']) && !empty($space_obj->group->{$used}['und'])) {
+    $used_value = $space_obj->group->{$used}['und'][0]['value'];
+
+    if ($used_value == '--') {
+      $used_value = NULL;
+    }
+  }
+
+  if (empty($allocated_value)){
+    return 0;
+  }
+  else if (empty($used_value)) {
+    return $allocated_value;
+  }
+  else {
+    $items_available = $allocated_value - $used_value;
+    return $items_available;
+  }
+}
+
+function bah_mod_generate_total($key, $cart_items, $available_items) {
+  $total = '';
+
+  if ($key == 'Memory' || $key == 'Storage') {
+    $suffix = ' GB';
+  }
+  else {
+    $suffix = '';
+  }
+
+  $items_after_purchase = $available_items[$key] - $cart_items[$key];
+
+  $class = "va-mod-in-budget";
+  if ($items_after_purchase < 0) {
+    $class = "va-mod-over-budget";
+  }
+
+  $total .= "<div class='va-mod-generated-totals " . strtolower($key) . "-generated-totals' data-test='chris'>";
+  $total .= "  <div class='va-mod-remaining " . strtolower($key) . "-remaining'><span class='label'>$key Available:</span><span class='detail'> " . $available_items[$key] . $suffix . "</span></div>";
+  $total .= "  <div class='va-mod-total " . strtolower($key) . "-total'><span class='label'>$key in Cart:</span><span class='detail'> " . $cart_items[$key] . $suffix . "</span></div>";
+  $total .= "  <div class='va-mod-purchase " . strtolower($key) . "-purchase'><span class='label'>$key Remaining:</span><span class='$class detail'>" . $items_after_purchase . $suffix . "</span></div>";
+  $total .= '</div>';
+
+  return $total;
+}
+
+/**
+ * Implements hook_commerce_og_credit_amount.
+ *
+ * Set the credit amount to zero since we are validating against mem,
+ * cpu, and disk instead.
+ *
+ * @param $og_credit_amount
+ * @return int
+ */
+function bah_mod_commerce_og_credit_amount($og_credit_amount) {
+  $og_credit_amount = 0;
+  return $og_credit_amount;
+}
+
+/**
+ * Implements hook_commerce_checkout_pane_info_alter
+ */
+function bah_mod_commerce_checkout_pane_info_alter(&$checkout_panes) {
+  $checkout_panes['cart_contents']['callbacks']['checkout_form_validate'] = 'bah_mod_commerce_validate';
+}
+
+/**
+ * Checkout pane validation override
+ */
+function bah_mod_commerce_validate(&$form, &$form_state, $checkout_pane, $order) {
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $line_items_array = $order_wrapper->commerce_line_items->value();
+
+  $fields = array(
+    array(
+      'field' => 'field_cpu',
+      'allocated' => 'field_estimated_cpu',
+      'used' => 'field_used_vcpu'
+    ),
+    array(
+      'field' => 'field_memory',
+      'allocated' => 'field_estimated_memory',
+      'used' => 'field_used_memory'
+    ),
+    array(
+      'field' => 'field_storage',
+      'allocated' => 'field_estimated_storage',
+      'used' => 'field_used_storage'
+    )
+  );
+  $space_obj = spaces_get_space();
+  $cart_items = array();
+  $available_items = array();
+
+  foreach ($fields as $field) {
+    $cart_items[$field['field']] = bah_mod_value_field($field, $line_items_array);
+    $available_items[$field['field']] = bah_mod_allocated_and_used($space_obj, $field);
+  }
+
+  $error = 0;
+
+  foreach ($cart_items as $cart_key => $cart_value) {
+    if (isset($cart_value) && isset($available_items[$cart_key])) {
+      if ($available_items[$cart_key] - $cart_value < 0) {
+        form_set_error("checkout", "Your project does not have enough assigned resources to proceed. ");
+        $error = 1;
+      }
+    }
+  }
+  if ($error != 1) {
+    return TRUE;
+  }
+}

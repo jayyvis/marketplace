@@ -1,0 +1,13 @@
+name = BAH Mod
+description = Module that modifies Various BAH things in Drupal.
+core = 7.x
+stylesheets[all][] = bah_mod.css
+
+dependencies[] = spaces
+dependencies[] = spaces_og
+dependencies[] = spaces_ui
+dependencies[] = token_filter
+dependencies[] = empty_cart
+dependencies[] = og_credit
+dependencies[] = commerce_og_credit
+dependencies[] = purl

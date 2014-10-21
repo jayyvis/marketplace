@@ -1,0 +1,12 @@
+name = Workflow Field Control
+description = Adds per-field read/write/required settings to each workflow state.
+package = Workflow
+core = 7.x
+version = 7.x-1.x-dev
+
+
+dependencies[] = field
+dependencies[] = field_ui
+dependencies[] = workflow
+dependencies[] = workflow_admin_ui
+;dependencies[] = workflowfield

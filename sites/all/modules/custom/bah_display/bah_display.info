@@ -1,0 +1,10 @@
+package = "BAH Broker"
+name = BAH Broker - Display hooks into forms for theming
+description = "Display hooks into forms for theming. All custom hooks for theming are defined in this module."
+core = 7.x
+version = 7.x-1.x-dev
+
+dependencies[] = taxonomy
+dependencies[] = og
+dependencies[] = uc_cart
+dependencies[] = uc_order

@@ -1,0 +1,32 @@
+<?php
+
+/**
+ * @file
+ * commerce_og_credit.insta..
+ *
+ * Add our commerce_order field for the related OG group.
+ * Remove variables on uninstall.
+ *
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function commerce_og_credit_install() {
+  // Add the OG Audience field to the commerce_order entity/bundle.
+  _commerce_og_credit_addfield('commerce_order', 'commerce_order');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function commerce_og_credit_uninstall() {
+  // Remove variables
+  variable_del('commerce_og_credit_payment');
+  variable_del('commerce_og_credit_display');
+  variable_del('commerce_og_credit_pay_moderate');
+  variable_del('commerce_og_credit_pay_category');
+}
+
+// No need to create our own payment log table, since Drupal Commerce uses a
+// central table for this:  commerce_payment_transaction

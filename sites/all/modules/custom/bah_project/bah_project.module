@@ -1,0 +1,406 @@
+<?php
+
+/**
+ * @file
+ * bah_project.module
+ *
+ * This module copies project_request node data to a new project node.
+ *
+ */
+
+/**
+ * Implements hook_rules_action_info().
+ *
+ * @return array
+ */
+function bah_project_rules_action_info() {
+// @todo Create a rules action that creates a new project node from a project request node.
+
+  $actions = array(
+    'bah_project_actions_create_project' => array(
+      'label' => t('Create a Project node from a Project Request node'),
+      'group' => t('Node'),
+      'parameter' => array(
+        'node' => array(
+          'type' => 'node',
+          'label' => t('The Project Request node'),
+          'bundles' => array('project_req'),
+        ),
+      ),
+    ),
+    'bah_project_actions_update_project_req_state' => array(
+      'label' => t('Update related Project Request state to Active'),
+      'group' => t('Workflow'),
+      'parameter' => array(
+        'node' => array(
+          'type' => 'node',
+          'label' => t('The Project node'),
+          'bundles' => array('project'),
+        ),
+      ),
+    ),
+  );
+
+  return $actions;
+}
+
+/**
+ * Callback for our rules action.
+ */
+function bah_project_actions_create_project($node) {
+  if (!empty($node->nid)) {
+    bah_project_set_project_node($node);
+  }
+  else {
+    // @todo Log and display a warning.
+  }
+}
+
+/**
+ * Callback for our rules action.
+ */
+function bah_project_actions_update_project_req_state($node) {
+  if (!empty($node->nid) && !empty($node->field_project_req)) {
+    $lang = LANGUAGE_NONE;
+    // Load our project_req node.
+    $entity = node_load($node->field_project_req[$lang][0]['target_id']);
+
+    // Execute our transition to 'Active'.
+    // @see _workflow_rules_set_state().
+    $entity_type = 'node';
+    $field_name = 'field_proj_req_state';
+    $old_sid = workflow_node_current_state($entity, $entity_type, $field_name);
+    $workflow = workflow_load_by_name('Project');
+    $active_state = workflow_state_load_by_name('Active', $workflow->wid);
+    $comment = 'Automatically updated to Active by bah_project.';
+    $transition = new WorkflowTransition();
+    $transition->setValues($entity_type, $entity, $field_name, $old_sid, $active_state->sid, 1, REQUEST_TIME, $comment);
+    $transition->force($force = TRUE);
+    $sid = $transition->execute($force);
+
+    if ($sid == $active_state->sid) {
+      $entity->{$field_name}[$lang] = array();
+      $entity->{$field_name}[$lang][0]['workflow']['workflow_sid'] = $active_state->sid;
+      $entity->{$field_name}[$lang][0]['workflow']['workflow_comment'] = $comment;
+
+      // Save the project_req.  NOTE: Doesn't allow other rules to trigger.
+//      $entity_id = entity_id($entity_type, $entity);
+//      field_attach_update($entity_type, $entity);
+//      entity_get_controller($entity_type)->resetCache(array($entity_id));
+
+      // Save the project_req.  NOTE: Allow other rules to trigger.
+      entity_save($entity_type, $entity);
+    }
+    else {
+      // @todo Log and display an error.
+    }
+  }
+  else {
+    // @todo Log and display a warning.
+  }
+}
+
+/**
+ * Implements hook_node_access().
+ */
+function bah_project_node_access($node, $op, $account) {
+  // Don't impact the 'create' operation, use the global node permission.
+  if ($op == 'create') {
+    return NODE_ACCESS_IGNORE;
+  }
+
+  // We only want to worry about node objects and project_req nodes.
+  if (is_string($node) || $node->type != 'project_req') {
+    return NODE_ACCESS_IGNORE;
+  }
+
+  // See if this $account is a member of other roles that should be ignored.
+  $account = user_load($account->uid);
+  $in_ignore_roles = array_intersect(
+    array(
+      'administrator',
+      //'Project Manager', // @todo Uncomment if PMs should have access to all.
+      'Business Office Manager',
+      'Project Administrator',
+      'System Administrator',
+    ),
+    array_values($account->roles)
+  );
+  if ($in_ignore_roles) {
+    return NODE_ACCESS_IGNORE;
+  }
+
+  // See if this $account is the node author
+  if ($node->uid == $account->uid){
+    return NODE_ACCESS_ALLOW;
+  }
+
+  // Get the UID values for the member field(s).
+  $uids = bah_project_get_project_req_member_uids($node) + array($node->uid);
+
+  // Check these fields for UIDs.
+
+  // Allow users in our fields.  Deny users that are not.
+  // There are other checks before this point to prevent erroneous denial.
+  if (in_array($account->uid, array_unique($uids))) {
+    return NODE_ACCESS_ALLOW;
+  }
+  else {
+    return NODE_ACCESS_DENY;
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Remove the "- None -" option from the workflow state select field.
+ *
+ * @param $form
+ * @param $form_state
+ * @param $form_id
+ */
+function bah_project_form_project_req_node_form_alter(&$form, &$form_state, $form_id) {
+  $lang = LANGUAGE_NONE;
+  if (!empty($form['field_proj_req_state'][$lang]['#options']['_none'])) {
+    unset($form['field_proj_req_state'][$lang]['#options']['_none']);
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Hide the field_project_req from the node edit form for all users.
+ *
+ * @param $form
+ * @param $form_state
+ * @param $form_id
+ */
+function bah_project_form_project_node_form_alter(&$form, &$form_state, $form_id) {
+  global $user;
+
+  // Disregard for User 1.
+  // @todo Add more access logic if needed to be more permissive.
+  if (!empty($user->uid) && $user->uid == 1) {
+    return;
+  }
+
+  // Kill access and hide our field.
+  $field_name = 'field_project_req';
+  if (isset($form[$field_name])) {
+    $form[$field_name]['#access'] = FALSE;
+    $form[$field_name]['#disabled'] = TRUE;
+  }
+}
+
+/**
+ * Create/Update a project node from a given project request node, assigns the
+ * field_project_req entity reference field to point to the source project
+ * request node, and sets the project request node to "Active".
+ *
+ * @param object $project_req The Project Request node object to parse.
+ *
+ * @return mixed Either returns the project node or FALSE on failure.
+ */
+function bah_project_set_project_node($project_req) {
+  $lang = LANGUAGE_NONE;
+
+  // @todo Validate $project_req
+
+  // Find an existing project node or prepare a new one.
+  $node = bah_project_get_project_node($project_req->nid);
+  $changed = 0; // Capture the node's timestamp for comparison.
+  if (empty($node->nid)) {
+    $node = new stdClass();
+    $node->title = $project_req->title;
+    $node->type = 'project';
+    node_object_prepare($node);
+    $node->is_new = TRUE;
+    $node->uid = 1;
+    $node->language = $lang;
+    $node->status = 0; // Save new projects as unpublished.
+    $node->log = 'Automatically created by the bah_project module.';
+
+    // Set our OG group_access to "Private".
+    $node->{OG_ACCESS_FIELD}[$lang][0]['value'] = 1;
+  }
+  else {
+    $node->revision = 1;
+    $node->log = 'Automatically updated by the bah_project module.';
+    $changed = $node->changed;
+  }
+
+  // Fields to ignore.
+  $ignore_fields = array(
+    'field_add_member',
+    'field_add_pm',
+    'field_project_req',
+    'field_credit_limit',
+    OG_CREDIT_FIELD,
+    OG_GROUP_FIELD,
+    OG_REGISTER_FIELD,
+    OG_DEFAULT_ACCESS_FIELD,
+    OG_ACCESS_FIELD,
+    OG_CONTENT_ACCESS_FIELD,
+    // @todo Add other fields as needed.
+  );
+
+  // Get existing field names.
+  $proj_req_fields = array_keys(field_info_instances('node', 'project_req'));
+  $project_fields = array_keys(field_info_instances('node', 'project'));
+
+  // Populate the project fields.
+  foreach ($proj_req_fields as $field_name) {
+    $can_copy = in_array($field_name, $project_fields) &&
+      !in_array($field_name, $ignore_fields) &&
+      isset($project_req->{$field_name});
+    if ($can_copy) {
+      $node->{$field_name} = $project_req->{$field_name};
+    }
+  }
+
+  // Add the project_req to the project.
+  $node->field_project_req[$lang][0]['target_id'] = $project_req->nid;
+
+  // Set the credit limit.
+  $og_credit = empty($project_req->field_credit_limit[$lang][0]['value']) ? 0 :
+    (float) $project_req->field_credit_limit[$lang][0]['value'];
+  $node->{OG_CREDIT_FIELD}[$lang][0]['value'] = $og_credit;
+
+  // Save the project node.
+  node_save($node);
+  $successful_save = ($changed < $node->changed);
+  if (!$successful_save) {
+    // @todo Log an error.
+    return FALSE;
+  }
+
+  // For now, leave this logic.  OG memberships will be managed through LDAP.
+//  // Enroll "member" users as normal group users.  @todo Confirm role.
+//  $member_field = FALSE;
+//  $members = !empty($project_req->field_add_member[$lang]) ?
+//    $project_req->field_add_member[$lang] : array();
+//  foreach ($members as $member) {
+//    bah_project_subscribe($node->nid, $member['target_id'], OG_AUTHENTICATED_ROLE);
+//  }
+//  // @todo Add the Project Request author too?
+////  bah_project_subscribe($node->nid, $project_req->uid, OG_AUTHENTICATED_ROLE);
+//  // Enroll "project manager" users as group admins.  @todo Confirm role.
+//  $pms = !empty($project_req->field_add_pm[$lang]) ?
+//    $project_req->field_add_pm[$lang] : array();
+//  foreach ($pms as $pm) {
+//    bah_project_subscribe($node->nid, $pm['target_id'], OG_ADMINISTRATOR_ROLE);
+//  }
+
+  return $node;
+}
+
+/**
+ * Get an existing project node.
+ *
+ * @param integer $nid The project_req node ID to reference.
+ *
+ * @return mixed The node object or FALSE on failure.
+ */
+function bah_project_get_project_node($nid) {
+  $node = &drupal_static(__FUNCTION__);
+  if (!isset($node)) {
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'node')
+      ->entityCondition('bundle', 'project')
+      ->fieldCondition('field_project_req', 'target_id', $nid)
+      ->range(0,1)
+      ->addMetaData('account', user_load(1));
+    $result = $query->execute();
+
+    if (!empty($result['node'])) {
+      $node_keys = array_keys($result['node']);
+      $keyed_nodes = entity_load('node', $node_keys);
+      $node = reset($keyed_nodes);
+    }
+    else {
+      // @todo Log a warning.
+      $node = FALSE;
+    }
+  }
+
+  return $node;
+}
+
+/**
+ * Adds a user to a project group with the specified OG role.
+ *
+ * NOTE: This function is only meant to be used during project node creation.
+ * Any further membership/role modifications should be made in the UI.
+ *
+ * @param integer $nid The project's Node ID.
+ * @param integer $uid The user ID.
+ * @param string $group_role The OG role to grant.
+ *
+ * @param string $group_role
+ */
+function bah_project_subscribe($nid, $uid, $group_role = OG_AUTHENTICATED_ROLE) {
+  // Add this user to the group.
+  $field_name = 'og_user_node';
+  $account = user_load($uid);
+  $og_membership = og_group('node', $nid, array('entity' => $account, 'field_name' => $field_name));
+
+  // Add this user in the appropriate og_role.
+  $rid = array_search($group_role, og_roles('node', 'project'));
+  og_role_grant('node', $nid, $account->uid, $rid);
+}
+
+/**
+ * Get the UID values from a Project Request node.
+ *
+ * @param object $node The project_req node to reference.
+ *
+ * @return array The UID values that we could find, if any.
+ */
+function bah_project_get_project_req_member_uids($node) {
+  if (empty($node->type) || $node->type != 'project_req') {
+    return array();
+  }
+
+  $uids = array();
+
+  // They should all be standard entityreference user fields.
+  $field_names = array(
+    'field_add_pm',
+    'field_add_member',
+    'field_add_user',
+  );
+  $lang = LANGUAGE_NONE;
+
+  // Build the UIDs list.  Initialize with the node author.
+  foreach ($field_names as $field_name) {
+    if (!empty($node->{$field_name}[$lang])) {
+      foreach ($node->{$field_name}[$lang] as $field_value) {
+        if (!empty($field_value['target_id'])) {
+          $uids[] = $field_value['target_id'];
+        }
+      }
+    }
+  }
+
+  // Handle our field collection.
+  if (!empty($node->field_add_cont[$lang])) {
+    foreach ($node->field_add_cont[$lang] as $fc_value) {
+      if (!empty($fc_value['value'])) {
+        $fc_item = reset(entity_load('field_collection_item', array($fc_value['value'])));
+        if (!empty($fc_item)) {
+          foreach ($field_names as $field_name) {
+            if (!empty($fc_item->{$field_name}[$lang])) {
+              foreach ($fc_item->{$field_name}[$lang] as $field_value) {
+                if (!empty($field_value['target_id'])) {
+                  $uids[] = $field_value['target_id'];
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return $uids;
+}

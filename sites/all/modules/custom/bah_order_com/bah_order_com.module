@@ -1,0 +1,1305 @@
+<?php
+
+/**
+ * @file
+ * bah_order_com.module
+ *
+ * This module collects information from orders to send to the provisioning
+ * engine and collection information from the provisioning engine about order
+ * fulfillment.
+ *
+ */
+
+// These values are overridden on the admin settings page:
+define('BAH_TRANSMIT_URL', 'http://0.0.0.0:8183/api/orders/');
+define('BAH_RECEIVE_APIKEY', 'U84196SpMq37xFj8oB5quuLC587UW7tJ');
+
+/**
+ * Implements hook_menu().
+ */
+function bah_order_com_menu() {
+  $items = array();
+
+  $items['api/orders'] = array(
+    'access callback'   => true, // available to all
+    'page callback'     => 'bah_order_com_receive_get', // defined below
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+
+  $items['api/orders/testjson'] = array(
+    'access callback'   => true, // available to all
+    'page callback'     => 'bah_order_com_receive_testjson', // defined below
+    'delivery callback' => 'drupal_json_output',
+  );
+
+  $items['admin/commerce/bah-order-com'] = array(
+    'title' => t('Broker - Order Communications'),
+    'description' => t('Configure settings.'),
+    'page callback' => 'bah_order_com_admin',
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'bah_order_com.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_cron().
+ */
+function bah_order_com_cron() {
+  // Capture the current time for possible timeouts.
+  $timeout = variable_get('bah_order_com_queue_timeout', 240);
+  $timedout = (REQUEST_TIME + $timeout) < time();
+
+  // Process queued items, manually.
+  $order_queue = DrupalQueue::get('bah_order_com_order');
+  $order_error = FALSE;
+  $orders_processed = FALSE; // Don't transmit if we have to process an order.
+  while (($item = $order_queue->claimItem(60)) && !$order_error && !$timedout) {
+    $orders_processed = TRUE; // Set regardless of error status.
+    if (bah_order_com_preprocess_order($item->data)) {
+      bah_order_com_transmit_put($item->data);
+      $order_queue->deleteItem($item);
+    }
+    // Error handling:
+    else {
+      watchdog(
+        'bah_order_com',
+        'Order preprocessing error.  Stopping queue. $item='.'<pre>' . var_export($item,1) . '</pre>',
+        array(),
+        WATCHDOG_ERROR
+      );
+      $order_error = TRUE;
+      $order_queue->releaseItem($item);
+    }
+    $timedout = (REQUEST_TIME + $timeout) < time();
+  }
+  $transmit_queue = DrupalQueue::get('bah_order_com_transmit');
+  $transmit_error = FALSE;
+  while (($item = $transmit_queue->claimItem(60)) && !$transmit_error && !$timedout && !$orders_processed) {
+    if (bah_order_com_transmit_worker($item->data)) {
+      $transmit_queue->deleteItem($item);
+    }
+    // Error handling:
+    else {
+      watchdog(
+        'bah_order_com',
+        'Transmit error.  Stopping queue. $item='.'<pre>' . var_export($item,1) . '</pre>',
+        array(),
+        WATCHDOG_ERROR
+      );
+      $transmit_error = TRUE;
+      $transmit_queue->releaseItem($item);
+    }
+    $timedout = (REQUEST_TIME + $timeout) < time();
+  }
+  $receive_queue = DrupalQueue::get('bah_order_com_receive');
+  $receive_error = FALSE;
+  while (($item = $receive_queue->claimItem(60)) && !$receive_error && !$timedout) {
+    if (bah_order_com_receive_worker($item->data)) {
+      $receive_queue->deleteItem($item);
+    }
+    // Error handling:
+    else {
+      watchdog(
+        'bah_order_com',
+        'Error processing queued data.  Stopping queue. $item='.'<pre>' . var_export($item,1).'</pre>',
+        array(),
+        WATCHDOG_ERROR
+      );
+      $receive_error = TRUE;
+      $receive_queue->releaseItem($item);
+    }
+    $timedout = (REQUEST_TIME + $timeout) < time();
+  }
+
+  // Process the orders to see if all related instances are completed.
+  // @todo This should probably add items to a queue, then process the queue next.
+  $orders = array_unique(variable_get('bah_order_com_check_orders', array()), SORT_NUMERIC);
+  $success = TRUE;
+  while ($success && !empty($orders) && !$timedout) {
+    $success = bah_order_com_check_order(array_pop($orders));
+    variable_set('bah_order_com_check_orders', $orders);
+    $timedout = (REQUEST_TIME + $timeout) < time();
+  }
+}
+
+/*
+ * Implements hook_commerce_payment_order_paid_in_full().
+ * NOTE: This hook is only fired once per order, ever.
+ * @see http://api.drupalcommerce.org/api/Drupal%20Commerce/sites!all!modules!commerce!modules!payment!commerce_payment.api.php/function/hook_commerce_payment_order_paid_in_full/DC
+ *
+ * @todo React to order payments with hook_commerce_payment_order_paid_in_full(), hook_entity_update(), or hook_commerce_order_presave().
+ */
+function bah_order_com_commerce_payment_order_paid_in_full($transaction) {
+  // Debugging.
+//  dpm($transaction, '$transaction');
+
+  // Load the order object for processing
+  if ($order = commerce_order_load($transaction->order_id)) {
+    // Add this data to the queue for processing later.
+    $order_queue = DrupalQueue::get('bah_order_com_order');
+    $order_queue->createItem($order->order_id);
+    watchdog('bah_order_com',
+      'Queued order @order_id for preprocessing.',
+      array('@order_id' => $order->order_id),
+      WATCHDOG_INFO
+    );
+  }
+  else {
+    watchdog(
+      'bah_order_com',
+      'Unable to load order from transaction data. $transaction='.'<pre>' . var_export($transaction,1). '</pre>',
+      array(),
+      WATCHDOG_ERROR
+    );
+  }
+}
+
+///**
+// * Implements hook_commerce_product_calculate_sell_price_line_item_alter().
+// *
+// * @see hook_commerce_product_calculate_sell_price_line_item_alter(), hook_commerce_line_item_rebase_unit_price(), ...?
+// */
+//function bah_order_com_commerce_product_calculate_sell_price_line_item_alter($line_item) {
+//  global $user;
+//
+//  // Reference the current shopping cart order in the line item if it isn't set.
+//  if (empty($line_item->order_id)) {
+//    $line_item->order_id = commerce_cart_order_id($user->uid);
+//  }
+//
+//  dpm($line_item, '$line_item');
+//
+//  // @todo Either modify the product line item price based on a month field multiplier, or add a new line item for the N-1 months.
+//  $months = 1;
+//  // @todo Load our months value from this product's attribute.
+//
+//  // Make sure we haven't already altered the price.
+//  if (empty($line_item->bah_price_altered)) {
+//    $current_price = $line_item->commerce_unit_price[LANGUAGE_NONE]['0']['amount'];
+//    $line_item->commerce_unit_price[LANGUAGE_NONE]['0']['amount'] *= $months;
+//    $line_item->bah_price_altered = true;
+//  }
+//}
+
+// @todo Maybe also use the hook_commerce_cart_line_item_refresh() to alter the price (or should we use Rules instead?).
+
+
+// @todo Add a new order pane to display the associated order product statuses (from the "instance" nodes?) or should this be handled with views?
+// Probably views...  hold for now.
+// @todo Add a callback to get a render array with a table of product statuses
+// @todo Add a callback to get the statuses for ordered products (from the "instance" nodes?)
+
+
+/**
+ * Attempt to process an order immediately.  Queues on failure.
+ *
+ * @param integer $order_id The commerce_order ID.
+ *
+ * @return boolean TRUE if successful, otherwise FALSE with errors logged.
+ */
+function bah_order_com_transmit_put($order_id) {
+  if (empty($order_id)) {
+    watchdog('bah_order_com',
+      __FUNCTION__ . PHP_EOL .
+      'Invalid order_id.',
+      array(),
+      WATCHDOG_ERROR
+    );
+    return FALSE;
+  }
+
+  // NOTE: bah_order_com_preprocess_order() must have run by this point.
+
+  if (bah_order_com_transmit_worker($order_id) === FALSE) {
+    // Add this data to the queue for processing later.
+    $transmit_queue = DrupalQueue::get('bah_order_com_transmit');
+    $transmit_queue->createItem($order_id);
+    watchdog('bah_order_com',
+      'Queued order @order_id transmission for later.',
+      array('@order_id' => $order_id),
+      WATCHDOG_NOTICE
+    );
+    return TRUE;
+  }
+
+  return TRUE;
+}
+
+/**
+ * Process a queued data item.
+ *
+ * @param integer $order_id The commerce_order ID to reference.
+ *
+ * @return boolean Returns TRUE when successful, FALSE on failure.
+ */
+function bah_order_com_transmit_worker($order_id) {
+  // Get our order's JSON data for transmission.
+  $data = bah_order_com_get_order_json($order_id);
+
+  if (empty($data) || $data == 'false') {
+    watchdog('bah_order_com',
+      __FUNCTION__ . PHP_EOL .
+      'Problem loading data for order @order_id. $data=' . PHP_EOL .
+      '<pre>' . var_export($data,1) . '</pre>' . PHP_EOL,
+      array('@order_id' => $order_id),
+      WATCHDOG_ERROR
+    );
+    return FALSE;
+  }
+  else {
+    // This can be commented out when not debugging:
+    watchdog('bah_order_com',
+      __FUNCTION__ . PHP_EOL .
+      'The JSON data for @order_id: ' . PHP_EOL .
+      '<pre>' . var_export($data,1) . '</pre>' . PHP_EOL,
+      array('@order_id' => $order_id),
+      WATCHDOG_DEBUG
+    );
+  }
+
+  $success = FALSE;
+
+  $ch = curl_init();
+  $options = array(
+    CURLOPT_URL => variable_get('bah_order_com_transmit_url', BAH_TRANSMIT_URL),
+    CURLOPT_HTTPHEADER => array('Content-Type: application/json'),
+    CURLOPT_POST => 1,
+    CURLOPT_POSTFIELDS => $data,
+    CURLOPT_HEADER => FALSE,
+    CURLOPT_RETURNTRANSFER => TRUE,
+    CURLOPT_FAILONERROR => TRUE,
+  );
+  // Handle Basic Authentication, if needed.
+  $username = variable_get('bah_order_com_transmit_username', '');
+  $password = variable_get('bah_order_com_transmit_password', '');
+  if (!empty($username)) {
+    $options[CURLOPT_USERPWD] = $username .':' . $password;
+  }
+  curl_setopt_array($ch, $options);
+
+  $response = curl_exec($ch);
+  $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+  if ($http_code == 200) {
+    $success = TRUE;
+  }
+  else {
+    $curl_error = curl_error($ch);
+    watchdog('bah_order_com',
+      'Transmit curl error: ' . PHP_EOL .
+      'CURL ERROR: ' . $curl_error . PHP_EOL .
+      'CURL OPTIONS: ' . '<pre>' . var_export($options,1) . '</pre>' . PHP_EOL,
+      array(),
+      WATCHDOG_ERROR
+    );
+    $success = FALSE;
+  }
+
+  return $success;
+}
+
+/**
+ * Attempts to send an order's JSON data.
+ *
+ * @param integer $order_id The commerce_order ID.
+ *
+ * @return boolean TRUE if successful, otherwise FALSE with errors logged.
+ */
+function bah_order_com_preprocess_order($order_id) {
+  $order = commerce_order_load($order_id);
+  if (empty($order->order_id)) {
+    watchdog('bah_order_com',
+      __FUNCTION__ . PHP_EOL .
+      'Invalid order.',
+      array(),
+      WATCHDOG_ERROR
+    );
+    return FALSE;
+  }
+
+  // Create the instance nodes for each line_item.
+  $line_items = bah_order_com_get_product_line_items($order);
+  $nodes = array();
+  foreach ($line_items as $line_item_id=>$line_item) {
+    // Ensure that we have a valid line_item with a quantity.
+    if (empty($line_item->quantity)) {
+      watchdog('bah_order_com',
+        __FUNCTION__ . PHP_EOL .
+        'Could not load the quantity for $line_item=.' . PHP_EOL .
+        '<pre>' . var_export($line_item,1) . '</pre>',
+        array(),
+        WATCHDOG_WARNING
+      );
+      continue;
+    }
+
+    // Create a new instance node for the quantity count.
+    for ($i = 1; $i <= (integer) $line_item->quantity; $i++) {
+      $data = (object) array(
+        'line_item_id' => $line_item_id,
+        'status' => 'pending',
+        'description' => t('This item is currently being provisioned.'),
+        'fields' => array(),
+      );
+      $node = bah_order_com_set_instance_node($data);
+      if (!empty($node)) {
+        $nodes[] = $node;
+      }
+    }
+  }
+
+  // Do nothing if we didn't create instance nodes.
+  if (empty($nodes)) {
+    watchdog('bah_order_com',
+      __FUNCTION__ . PHP_EOL .
+      'Instance nodes were not properly created.',
+      array(),
+      WATCHDOG_ERROR
+    );
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+/**
+ * Return encoded json object for receive api testing.
+ *
+ * @return string A json encoded object.
+ */
+
+function bah_order_com_receive_testjson() {
+  return json_encode(bah_order_com_receive_testdata());
+}
+
+/**
+ * Return encoded json object for receive api testing.
+ *
+ * @return string A json encoded object.
+ */
+function bah_order_com_receive_testdata() {
+  $items = array();
+  $items['5f3be062-1015-45a3-b497-80f2e86b815b'] = (object) array(
+    'uuid'=>'5f3be062-1015-45a3-b497-80f2e86b815b',
+    'status'=>'pending',
+    'description'=>'This order is pending because stuff.',
+    'fields' => array(
+      'cloudforms_guid'=>'1234-1231223-123121',
+      'fqdn'=>'newhost1.local',
+    ),
+  );
+  $items['5f3be062-1015-45a3-b497-80f2e86b815c'] = (object) array(
+    'uuid'=>'5f3be062-1015-45a3-b497-80f2e86b815c',
+    'status'=>'completed',
+    'description'=>'This order is completed.',
+    'fields' => array(
+      'cloudforms_guid'=>'1234-1231223-123122',
+      'fqdn'=>'newhost2.local',
+    ),
+  );
+  $items['5f3be062-1015-45a3-b497-80f2e86b815d'] = (object) array(
+    'uuid'=>'5f3be062-1015-45a3-b497-80f2e86b815d',
+    'status'=>'failed',
+    'description'=>'This order failed because stuff.',
+    'fields' => array(
+      'cloudforms_guid'=>'1234-1231223-123123',
+      'fqdn'=>'newhost3.local',
+    ),
+  );
+
+  return $items;
+}
+
+/**
+ * Accepts pre-processed data to create node instances from line_item data.
+ *
+ * @param object $data The data to be processed.
+ *
+ * @return boolean TRUE if successful or FALSE on the first failure.
+ */
+function bah_order_com_receive_worker($data) {
+  // Validate the data type.
+  if (!(is_array($data) || is_object($data)) || empty($data)) {
+    // @todo Log an error.
+
+    return FALSE;
+  }
+
+  // Ensure that we're looking at an array.
+  if (is_object($data)) {
+    $data = (array) $data;
+  }
+
+  //dpm($data, '$data');
+  // Load existing nodes (if any) before sending off to the node factory.
+  // Assumes that the data has a uuid with instance data.
+  foreach ($data['instances'] as $instance) {
+    // Prepare the instance data object.
+    if (!is_object($instance) && is_array($instance)) {
+      $instance = (object) $instance;
+    }
+
+    if (empty($instance->uuid)) {
+      // @todo Log a warning.
+      continue;
+    }
+
+    // Create or modify an instance node.
+    $current_node = bah_order_com_get_instance_node($instance->uuid);
+    $node = bah_order_com_set_instance_node($instance, $current_node);
+    if ($node == FALSE) {
+      // @todo Log an error.
+
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
+/**
+ * Prepare the received post data.
+ *
+ * @param mixed $data The post data.
+ *
+ * @return bool|object The processed data object
+ */
+function bah_order_com_receive_prep($data) {
+  // Prepare our data for the queue
+  // This array is keyed on the order_id|line_item_id (note the pipe)
+  $data_items = array();
+  $check_orders = array();
+  $current_orders = variable_get('bah_order_com_check_orders', array());
+
+  foreach ($data as $instance_uuid => $item) {
+    $uuid_nid = entity_get_id_by_uuid('node', array($instance_uuid));
+    if (count($uuid_nid) != 1) {
+      return FALSE;
+    }
+    $nid = $uuid_nid[$instance_uuid];
+    if (!$node = node_load($nid)){
+      return FALSE;
+    }
+    $node_wrapper = entity_metadata_wrapper('node', $node);
+    /* @node_wrapper EntityMetadataWrapper */
+    $line_item = $node_wrapper->field_commerce_line_item->value();
+
+    if (empty($line_item->order_id)){
+      return FALSE;
+    }
+
+    if (!$order = commerce_order_load($line_item->order_id)){
+      return FALSE;
+    }
+
+    // Add this data to be further processed/queued.
+    if (!empty($item) && is_array($item)) {
+      $data_items[$order->order_id.'|'.$line_item->line_item_id][$instance_uuid] = $item;
+      $check_orders[] = $order->order_id;
+    }
+  }
+  ksort($data_items);
+
+  return (object) array(
+    'data_items' => $data_items,
+    'orders' => array_merge($current_orders, array_unique($check_orders)),
+  );
+}
+
+/**
+ * Processes post data with product instance updates.
+ */
+function bah_order_com_receive_get() {
+  // Should we use the services module instead?  More work?
+
+  drupal_add_http_header('Status', '100 Continue');
+  if (!empty($_POST['key']) && !empty($_POST['data'])) {
+    $key = check_plain($_POST['key']);
+    if ($key == variable_get('bah_order_com_receive_key', BAH_RECEIVE_APIKEY)) {
+      $post_data = json_decode($_POST['data'], TRUE); // Use assoc array
+
+      // Kludge to munge CF return format in to what it should be.
+      if (isset($post_data[0]['instances'][0]['uuid'])){
+        $post_data[$post_data[0]['instances'][0]['uuid']] = $post_data[0]['instances'][0];
+        unset($post_data[0]);
+      }
+
+
+      // Test json object and decode it.
+      //$post_data = json_decode(bah_order_com_order_receive_testjson(), true);
+
+      // Debugging:
+      watchdog('bah_order_com',
+        '_receive_get:: $_POST='.'<pre>'.var_export($_POST,1).'</pre>'.PHP_EOL,
+        array(),
+        WATCHDOG_DEBUG
+      );
+      watchdog('bah_order_com',
+        '_receive_get:: $post_data='.'<pre>'.var_export($post_data,1).'</pre>'.PHP_EOL,
+        array(),
+        WATCHDOG_DEBUG
+      );
+
+      // Verify the JSON data was decoded properly, or throw an error
+      if (!is_array($post_data) && is_object($post_data)) {
+        $post_data = (array) $post_data;
+      }
+      if (empty($post_data)) {
+        $post_size = format_size(mb_strlen($_POST['data']), 'latin1');
+        // Do not output the post data for security purposes!
+        watchdog('bah_order_com',
+          'Invalid POST data. The JSON data (@size) was not properly decoded.',
+          array('@size' => $post_size),
+          WATCHDOG_ERROR
+        );
+        drupal_add_http_header('Status', '400 Bad Request');
+        print 'ERROR: Invalid POST data. Not an array of items.';
+        drupal_exit();
+        return FALSE; // Shouldn't be called, but leave here
+      }
+
+      // Prepare our data for the queue and get orders to check for completion.
+      // The data_items array is keyed on the order_id|line_item_id (note '|').
+      if (!$prep_data = bah_order_com_receive_prep($post_data)){
+        drupal_add_http_header('Status', '400 Bad Request');
+        print 'ERROR: Unable to locate dependent items.';
+        drupal_exit();
+        return FALSE; // Shouldn't be called, but leave here
+      }
+
+      variable_set('bah_order_com_check_orders', $prep_data->orders);
+
+      // Throw an error if we didn't collect anything valid
+      if (empty($prep_data->data_items)) {
+        watchdog('bah_order_com',
+          'No data was processed, invalid or missing required values.',
+          array(),
+          WATCHDOG_ERROR
+        );
+        drupal_add_http_header('Status', '422 Unprocessable Entity');
+        print 'ERROR: Line items not found.';
+        drupal_exit();
+        return FALSE; // Shouldn't be called, but leave here
+      }
+
+      // Queue up the items for processing
+      $receive_queue = DrupalQueue::get('bah_order_com_receive');
+      $start_time = time(); // Don't use REQUEST_TIME
+      $timeout = 60; // Process for up to 60 seconds @todo Constant or admin?
+      $response = array();
+      foreach ($prep_data->data_items as $key=>$instances) {
+        // Prepare our data object.
+        list($order_id, $line_item_id) = explode('|', $key);
+        $data = (object) array(
+          'order_id' => $order_id,
+          'line_item_id' => $line_item_id,
+          'instances' => $instances,
+        );
+
+        // Process until timeout, then queue
+        $current_time = time();
+        $timed_out = ($current_time - $timeout > $start_time);
+        if (($timed_out) || (bah_order_com_receive_worker($data) === FALSE)) {
+          $receive_queue->createItem($data);
+          $response[] = $data->process_status = 'queued';
+        }
+        else {
+          $response[] = $data->process_status = 'processed';
+        }
+      }
+
+      // Respond with the received, processed data array
+      drupal_add_http_header('Status', '200 OK');
+      drupal_json_output(json_encode($response));
+      drupal_exit();
+    }
+    // Error handling: if the api key does not match
+    else {
+      watchdog('bah_order_com',
+        'Receive error.  Invalid API Key. $key='.check_plain($key),
+        array(),
+        WATCHDOG_ERROR
+      );
+      drupal_add_http_header('Status', '401 Forbidden');
+      print 'ERROR: Check your API key.';
+      drupal_exit();
+      return FALSE; // Shouldn't be called, but leave here
+    }
+  }
+  else {
+    watchdog('bah_order_com',
+      'No key and no data were provide.',
+      array(),
+      WATCHDOG_ERROR
+    );
+    drupal_add_http_header('Status', '401 Forbidden');
+    print 'ERROR: No key and no data were received.';
+    drupal_exit();
+    return FALSE; // Shouldn't be called, but leave here
+  }
+  return TRUE;
+}
+
+// @todo Recreate the bah_order_com_webform_submission_insert() function with commerce in mind.  This is for the trial order.
+// @todo Recreate the _bah_order_com_webform_get_component() function with commerce in mind.
+
+/**
+ * Get the order JSON for transmission.
+ * NOTE: This assumes that two views already exist, and one for each custom
+ * product entity.
+ *
+ * @todo Add order JSON views to this module (can be overridden per site).
+ *
+ * @param integer $order_id The Order ID to reference.
+ *
+ * @return string The JSON data string for this order.
+ */
+function bah_order_com_get_order_json($order_id) {
+  // Temporarily swap out the current user to bypass some access checks.
+  global $user;
+  $account = $user;
+  $user = user_load(1);
+
+  // NOTE:  This views_embed_view() call fails in drush.  Not sure if that's a problem.
+  $json_order = trim(strip_tags(views_embed_view('order_data', 'page_json', $order_id)));
+  $json_instances = trim(strip_tags(views_embed_view('order_instance_data', 'page_json', $order_id)));
+
+  // Get a list of product entity bundles, loop through `page_json_BUNDLENAME`
+  // displays, and add to the instances array.
+  // If we get data from this, disregard the 'page_json' data.
+  $other_instances = array();
+  $entity_info = entity_get_info('commerce_product');
+  if (!empty($entity_info['bundles'])) {
+    $bundles = array_keys($entity_info['bundles']);
+    foreach ($bundles as $bundle) {
+      $other_instance = trim(strip_tags(views_embed_view('order_instance_data', 'page_json_'.$bundle, $order_id)));
+      if (!empty($other_instance)) {
+        // We want to stitch together the array, so pull out the nested array.
+        $other_instances[] = json_encode(reset(json_decode($other_instance)));
+      }
+    }
+  }
+
+  // Assemble our items if not just using the 'page_json'.
+  if (!empty($other_instances)) {
+    $json_instances = implode(',', $other_instances);
+  }
+
+  // Replace our placeholder.
+  $prepared = '"instances":' . $json_instances . '';
+  $json = str_ireplace('"instances":""', $prepared, $json_order);
+
+  // Swap the global user back.
+  $user = $account;
+
+  // Flatten the JSON data
+  return json_encode(reset(json_decode($json)));
+}
+
+
+/**
+ * Create an instance node given the provided data with some basic validation.
+ *
+ * @todo Provide an example of the data structure (from a JSON source).
+ *
+ * @param object $data The structured data object to parse.
+ * @param object $node (Optional) The existing node.
+ *
+ * @return mixed The newly created node object, or FALSE on failure.
+ */
+function bah_order_com_set_instance_node($data, $node = NULL) {
+  // The field language key.
+  $lang = LANGUAGE_NONE;
+
+  // Validate the data type.
+  if ((!is_array($data) && !is_object($data)) || empty($data)) {
+    watchdog('bah_order_com',
+      __FUNCTION__ . PHP_EOL .
+      'Invalid data type for $data=' . PHP_EOL .
+      '<pre>'.var_export($data,1).'</pre>',
+      array(),
+      WATCHDOG_ERROR
+    );
+
+    return FALSE;
+  }
+
+  // Ensure that we're looking at an object.
+  if (is_array($data)) {
+    $data = (object) $data;
+  }
+
+  // Check the $data validity.  We need either the line_item_id or uuid.
+  if (empty($node->field_commerce_line_item[$lang][0]['target_id']) &&
+    empty($data->line_item_id)) {
+    watchdog('bah_order_com',
+      __FUNCTION__ . PHP_EOL .
+      'Missing data in $data=' . PHP_EOL .
+      '<pre>'.var_export($data,1).'</pre>',
+      array(),
+      WATCHDOG_ERROR
+    );
+
+    return FALSE;
+  }
+
+  // Load the line_item, product, and order objects.
+  $line_item_id = empty($data->line_item_id) ?
+    $node->field_commerce_line_item[$lang][0]['target_id'] :
+    $data->line_item_id;
+  $line_item = commerce_line_item_load($line_item_id);
+  if (empty($line_item->commerce_product[$lang][0]['product_id'])) {
+    watchdog('bah_order_com',
+      __FUNCTION__ . PHP_EOL .
+      'Missing data in $line_item=' . PHP_EOL .
+      '<pre>'.var_export($line_item,1).'</pre>',
+      array(),
+      WATCHDOG_ERROR
+    );
+
+    return FALSE;
+  }
+
+  $product = commerce_product_load($line_item->commerce_product[$lang][0]['product_id']);
+  if (empty($product->type)) {
+    watchdog('bah_order_com',
+      __FUNCTION__ . PHP_EOL .
+      'Missing data in $product=' . PHP_EOL .
+      '<pre>'.var_export($product,1).'</pre>'. PHP_EOL .
+      ' and $line_item=' . PHP_EOL .
+      '<pre>'.var_export($line_item,1).'</pre>',
+      array(),
+      WATCHDOG_ERROR
+    );
+
+    return FALSE;
+  }
+
+  $order = commerce_order_load($line_item->order_id);
+  if (empty($order->{OG_AUDIENCE_FIELD})) {
+    watchdog('bah_order_com',
+      __FUNCTION__ . PHP_EOL .
+      'Missing data in $order=' . PHP_EOL .
+      '<pre>' . var_export($order,1) . '</pre>' . PHP_EOL .
+      ' and $line_item=' . PHP_EOL .
+      '<pre>' . var_export($line_item,1) . '</pre>',
+      array(),
+      WATCHDOG_ERROR
+    );
+
+    return FALSE;
+  }
+
+  // Create the content type as needed and ensure the proper fields are added.
+  $instance_type = $product->type . '_instance';
+  // Attempt to create this node type with defaults.
+  $product_entity_info = entity_get_info('commerce_product');
+  $label = empty($product_entity_info['bundles']["$product->type"]['label']) ?
+    ucfirst($product->type) :
+    $product_entity_info['bundles']["$product->type"]['label'];
+  $label .= ' Instance';
+  bah_order_com_add_instance_content_type($instance_type, $label);
+  if (empty($product_entity_info['bundles']["$product->type"]['label'])) {
+    watchdog('bah_order_com',
+      __FUNCTION__ . PHP_EOL .
+      "Unable to create the '$instance_type' content type." . PHP_EOL .
+      'Missing data in $product_entity_info=' . PHP_EOL .
+      '<pre>' . var_export($product_entity_info,1) . '</pre>',
+      array(),
+      WATCHDOG_WARNING
+    );
+
+    return FALSE;
+  }
+
+  // Get the fields attached to this bundle.
+  $field_names = array_keys(field_info_instances('node', $instance_type));
+
+  // Prepare a new node object if one was not provided/valid.
+  if (empty($node->nid)) {
+    $node = new stdClass();
+    $node->type = $instance_type;
+    $node->title = $product->title;
+    node_object_prepare($node);
+    $node->is_new = TRUE;
+    $node->uid = 1;
+    $node->status = 1;
+    $node->language = LANGUAGE_NONE;
+
+    // Set the line_item entity ref.
+    $node->field_commerce_line_item[$lang][0]['target_id'] = $line_item->line_item_id;
+
+    // Set the same group on the order to this node for OG perms, views, etc...
+    $node->{OG_AUDIENCE_FIELD}[$lang][0]['target_id'] =
+      $order->{OG_AUDIENCE_FIELD}[$lang][0]['target_id'];
+  }
+
+  // Set the status and description values for this instance.
+  $node->field_instance_status[$lang][0]['value'] = $data->status;
+  if (!empty($data->description)) {
+    $node->body[$lang][0]['value'] = $data->description;
+    $node->body[$lang][0]['summary'] = text_summary($data->description);
+    $node->body[$lang][0]['format'] = filter_default_format();
+  }
+
+  // Loop through the field data.
+  if (!empty($data->fields)) {
+    if (!is_array($data->fields) && is_object($data->fields)) {
+      $data->fields = (array) $data->fields;
+    }
+
+    // Fields that will be ignored.
+    $reserved_names = array(
+      'field_commerce_line_item',
+      'field_instance_status',
+      'field_json_data',
+    );
+
+    foreach ($data->fields as $key=>$value) {
+      $okay = TRUE;
+      $field_name = "field_$key";
+
+      // Skip reserved field names.
+      if (in_array($field_name, $reserved_names)) {
+        continue;
+      }
+
+      // Add this field to the content type if it doesn't exist.
+      if (!in_array($field_name, $field_names)) {
+        $label = drupal_ucfirst($key);
+        $okay = bah_order_com_add_field($instance_type, $field_name, $label);
+      }
+      if ($okay) {
+        $node->{$field_name}[$lang][0]['value'] = $value;
+      }
+    }
+  }
+
+  // Store a JSON backup of the $data in field_json_data.
+  $node->field_json_data[$lang][0]['value'] = json_encode($data);
+
+  // Save the new node.
+  node_save($node);
+
+  if (empty($node->nid)) {
+    watchdog('bah_order_com',
+      __FUNCTION__ . PHP_EOL .
+      'Unable to save a new node with $node=' . PHP_EOL .
+      '<pre>'.var_export($node,1).'</pre>',
+      array(),
+      WATCHDOG_ERROR
+    );
+
+    return FALSE;
+  }
+
+  // Add this order to our internal check for completion.
+  $current_orders = variable_get('bah_order_com_check_orders', array());
+  variable_set(
+    'bah_order_com_check_orders',
+    array_unique(array_merge($current_orders, array($order->order_id)))
+  );
+
+  return $node;
+}
+
+/**
+ * Get an existing instance node.
+ *
+ * @param string $uuid The UUID value for the node.
+ *
+ * @return mixed The node object or FALSE on failure.
+ */
+function bah_order_com_get_instance_node($uuid) {
+  $node = &drupal_static(__FUNCTION__);
+  if (!isset($node)) {
+    $nids = entity_get_id_by_uuid('node', array($uuid));
+
+    if (!empty($nids)) {
+      $node = reset(entity_load('node', $nids));
+    }
+    else {
+      // @todo Log a warning.
+      $node = FALSE;
+    }
+  }
+
+  return $node;
+}
+
+/**
+ * Get instance node statuses related to an orders.
+ *
+ * @param integer $order_id The order to reference.
+ *
+ * @return array An array of nodes.
+ */
+function bah_order_com_get_instance_nodes($order_id) {
+  $nodes = &drupal_static(__FUNCTION__);
+  if (!isset($nodes)) {
+    $order = commerce_order_load($order_id);
+    $lang = LANGUAGE_NONE;
+
+    // Collect the order's product line item IDs
+    $line_item_ids = array_keys(bah_order_com_get_product_line_items($order));
+
+    // Get the nodes
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'node')
+      ->entityCondition('bundle', '%_instance', 'like')
+      ->fieldCondition('field_commerce_line_item', 'target_id', $line_item_ids, 'IN')
+      ->addMetaData('account', user_load(1));
+    $result = $query->execute();
+
+    if (!empty($result['node'])) {
+      $nodes = entity_load('node', array_keys($result['node']));
+    }
+    else {
+      // @todo Log a warning.
+      $nodes = array();
+    }
+  }
+
+  return $nodes;
+}
+
+/**
+ * Get the product line items in an order.
+ *
+ * @param object $order The commerce_order object.
+ *
+ * @return array Line items, keyed on the line item ID.
+ */
+function bah_order_com_get_product_line_items($order) {
+  if (empty($order->order_id)) {
+    // Bail out early.  Nothing left to do.
+    return array();
+  }
+
+  $line_items = &drupal_static(__FUNCTION__);
+  if (!isset($line_items[$order->order_id])) {
+    $lang = LANGUAGE_NONE;
+    $line_item_ids = array();
+    if (empty($order->commerce_line_items[$lang])) {
+      // Bail out early.  Nothing left to do.
+      return array();
+    }
+    else {
+      foreach ($order->commerce_line_items[$lang] as $value) {
+        $line_item = commerce_line_item_load($value['line_item_id']);
+        // @todo Change to 'product_with_dimensions_1' line item type if required.
+        if ($line_item->type == 'product' || stristr($line_item->type, 'product_with_dimensions')) {
+          $line_item_ids[] = $value['line_item_id'];
+        }
+      }
+    }
+
+    $line_items[$order->order_id] = commerce_line_item_load_multiple($line_item_ids);
+  }
+
+  return $line_items[$order->order_id];
+}
+
+/**
+ * Check the order to see if all the associated line items are "completed".
+ * If so, mark the order as completed.
+ *
+ * @param integer $order_id
+ *
+ * @return boolean TRUE if successfully process, otherwise FALSE.
+ */
+function bah_order_com_check_order($order_id) {
+  // Do not modify our "trial" order (if there is one).
+  $trial_oid = (int) variable_get('bah_order_com_trial_oid', 0);
+  if ($order_id == $trial_oid) {
+    return TRUE;
+  }
+
+  // See if the order is already completed.
+  $completed_statuses = array('completed'); // @todo Replace with a callback
+  $order = commerce_order_load($order_id);
+  if (in_array($order->status, $completed_statuses)) {
+    // This order is already marked as completed, so do nothing.
+    return TRUE; // Continue processing.
+  }
+
+  $lang = LANGUAGE_NONE;
+
+  // Get the instance nodes related to these line items.
+  $nodes = bah_order_com_get_instance_nodes($order_id);
+  if (empty($nodes)) {
+    // @todo Log a warning about this order.
+    return TRUE; // Continue processing.
+  }
+
+  // Determine if all our instance nodes exist.
+  $line_items = bah_order_com_get_product_line_items($order);
+  $total_qty = 0;
+  foreach ($line_items as $line_item_id=>$line_item) {
+    $total_qty += $line_item->quantity;
+  }
+  if ($total_qty > count($nodes)) {
+    // @todo Log a debug message this order.
+    return TRUE; // Continue processing.
+  }
+
+  // Parse the nodes and pull the status values
+  $statuses = array();
+  foreach ($nodes as $nid=>$node) {
+    $statuses[$nid] = empty($node->field_instance_status[$lang][0]['value']) ?
+      'pending' :
+      trim(strtolower($node->field_instance_status[$lang][0]['value']));
+  }
+
+  // Is "completed" the only status value among the instances?
+  $unique_statuses = array_unique($statuses);
+  if (count($unique_statuses) == 1 && in_array(reset($unique_statuses), $completed_statuses)) {
+    $order->status = 'completed';
+    commerce_order_save($order);
+  }
+
+  return TRUE; // All done.
+}
+
+/**
+ * Add a new instance content type.
+ *
+ * @param string $bundle The bundle name of the new content type.
+ * @param string $label The human readable name of the new content type.
+ * @param array $field_names (Optional) An array of text fields to add.
+ *   The key is the field's machine name and the value is the label.
+ *
+ * @return boolean TRUE if successful, otherwise FALSE.
+ */
+function bah_order_com_add_instance_content_type($bundle, $label, $field_names = array()) {
+  static $has_run = array();
+
+  if (empty($has_run[$bundle])) {
+    $has_run[$bundle] = TRUE;
+
+    // Could be called during install.
+    $t = get_t();
+
+    // Create the content type only if it doesn't exist.
+    if (!in_array($bundle, array_keys(node_type_get_names()))) {
+      // Define the node type.
+      $node_config = array(
+        'type' => $bundle,
+        'name' => $t($label),
+        'base' => 'node_content',
+        'description' => $t('This is a product instance node, which is created automatically after items are provisioned.'),
+        'body_label' => $t('Description'),
+      );
+
+      // Complete the node type definition by setting any defaults not explicitly
+      // declared above.
+      // http://api.drupal.org/api/function/node_type_set_defaults/7
+      $content_type = node_type_set_defaults($node_config);
+      node_add_body_field($content_type);
+
+      // Save the content type.
+      node_type_save($content_type);
+
+      // NOTE:  Use node_type_delete() to remove later.
+    }
+
+    // Get the fields attached to this bundle.
+    $current_field_names = array_keys(field_info_instances('node', $bundle));
+
+    // Add default fields for automation.
+    $default_fields = array(
+      'field_commerce_line_item' => array(
+        'label' => 'Line Item',
+        'type' => 'entityreference',
+      ),
+      OG_AUDIENCE_FIELD => array(
+        'label' => 'Project',
+        'type' => 'og',
+      ),
+      'field_instance_status' => array(
+        'label' => 'Status',
+        'type' => 'text',
+      ),
+      'field_json_data' => array(
+        'label' => 'JSON Data',
+        'type' => 'text_long',
+      ),
+    );
+    foreach ($default_fields as $field_name=>$field) {
+      if (!in_array($field_name, $current_field_names)) {
+        $okay = bah_order_com_add_field($bundle, $field_name, $field['label'], $field['type']);
+        if (!$okay) {
+          watchdog('bah_order_com',
+            __FUNCTION__ . PHP_EOL .
+            'Unable to create field with bah_order_com_add_field().' . PHP_EOL .
+            '$bundle=' . PHP_EOL .
+            '<pre>'.var_export($bundle,1).'</pre>' . PHP_EOL .
+            '$field_name=' . PHP_EOL .
+            '<pre>'.var_export($field_name,1).'</pre>' . PHP_EOL .
+            '$field_label=' . PHP_EOL .
+            '<pre>'.var_export($field['label'],1).'</pre>' . PHP_EOL .
+            '$field_type=' . PHP_EOL .
+            '<pre>'.var_export($field['type'],1).'</pre>',
+            array(),
+            WATCHDOG_ERROR
+          );
+
+          $has_run[$bundle] = FALSE;
+        }
+      }
+    }
+
+    // Add other text fields.
+    foreach ($field_names as $field_name=>$field_label) {
+      if (!in_array($field_name, $current_field_names)) {
+        $okay = bah_order_com_add_field($bundle, $field_name, $field_label, 'text');
+        if (!$okay) {
+          watchdog('bah_order_com',
+            __FUNCTION__ . PHP_EOL .
+            'Unable to create field with bah_order_com_add_field().' . PHP_EOL .
+            '$bundle=' . PHP_EOL .
+            '<pre>'.var_export($bundle,1).'</pre>' . PHP_EOL .
+            '$field_name=' . PHP_EOL .
+            '<pre>'.var_export($field_name,1).'</pre>' . PHP_EOL .
+            '$field_label=' . PHP_EOL .
+            '<pre>'.var_export($field_label,1).'</pre>' . PHP_EOL .
+            '$field_type=text',
+            array(),
+            WATCHDOG_ERROR
+          );
+
+          $has_run[$bundle] = FALSE;
+        }
+      }
+    }
+  }
+
+  return $has_run[$bundle];
+}
+
+/**
+ * Add a field to a node.
+ *
+ * @param string $bundle The bundle on which to attach this field.
+ * @param string $field_name The internal name of the field.
+ * @param string $label The human readable name of the field.
+ * @param string $type (Optional) The type of field to create.
+ *
+ * @return boolean TRUE if successful, otherwise FALSE.
+ */
+function bah_order_com_add_field($bundle, $field_name, $label, $type ='text') {
+//  dpm(func_get_args(), 'bah_order_com_add_field()');
+  $success = TRUE;
+
+  // Define the field configuration.
+  $entity_type = 'node';
+  $field_config = array(
+    'field' => array(),
+    'instance' => array(),
+  );
+  switch ($type) {
+    // Special handler for OG defined fields. Exits early.
+    case 'og':
+      og_create_field($field_name, 'node', $bundle);
+      return $success;
+
+    case 'entityreference':
+      // Handle the targets.
+      $target_type = 'node';
+      $target_bundles = array();
+      if (stristr($field_name, 'commerce_line_item')) {
+        $target_type = 'commerce_line_item';
+        $target_bundles = array(); // Limit?
+      }
+
+      // Assumes that this is a single value field.
+      $field_config = array(
+        'field' => array(
+          'field_name' => $field_name,
+          'type' => 'entityreference',
+          'entity_types' => array(),
+          'settings' => array(
+            'target_type' => $target_type,
+            'handler_settings' => array(
+              'target_bundles' => NULL,
+            ),
+          ),
+        ),
+        'instance' => array(
+          'field_name' => $field_name,
+          'entity_type' => $entity_type,
+          'bundle' => $bundle,
+          'label' => $label,
+          'settings' => array(
+            'target_type' => $target_type,
+            'handler_settings' => array(
+              'target_bundles' => NULL,
+            ),
+          ),
+          'widget' => array(
+            'type' => 'entity_autocomplete',
+          ),
+        ),
+      );
+
+      break;
+
+    // @todo Add other field type configurations here.
+
+    case 'text_long':
+      $field_config = array(
+        'field' => array(
+          'field_name' => $field_name,
+          'type' => 'text_long',
+          'widget' => 'text_textarea',
+          'settings' => array('text_processing' => 0),
+        ),
+        'instance' => array(
+          'field_name' => $field_name,
+          'entity_type' => $entity_type,
+          'bundle' => $bundle,
+          'label' => $label,
+        ),
+      );
+      break;
+
+    case 'text':
+    default:
+      $field_config = array(
+        'field' => array(
+          'field_name' => $field_name,
+          'type' => 'text',
+          'settings' => array('max_length' => 255),
+        ),
+        'instance' => array(
+          'field_name' => $field_name,
+          'entity_type' => $entity_type,
+          'bundle' => $bundle,
+          'label' => $label,
+        ),
+      );
+      break;
+  }
+
+  // Create our field if it doesn't already exist.
+  $field = field_info_field($field_name);
+//  dpm($field, 'bah_order_com_add_field::$field');
+  if (empty($field)) {
+    $field = field_create_field($field_config['field']);
+  }
+
+  // Create our field instance for this bundle.
+  $instance = field_info_instance($entity_type, $field_name, $bundle);
+//  dpm($instance, 'bah_order_com_add_field::$instance');
+  if (empty($instance)) {
+    $instance = field_create_instance($field_config['instance']);
+    entity_property_info_cache_clear();
+  }
+
+  $success = !empty($instance);
+
+  return $success;
+}

@@ -1,0 +1,876 @@
+<?php
+
+/**
+ * @file
+ * This module adds to workflow.module the ability to specify, for each state,
+ * which fields should be visible, editable, or required for certain roles.
+ */
+
+define('WFC_DEFAULT', -1);
+define('WFC_DISABLED', 0);
+define('WFC_VIEW', 1);
+define('WFC_EDIT', 3);
+define('WFC_REQUIRED', 7);
+
+/**
+ * Implements hook_menu().
+ *
+ * Entries for each content type and workflow state.
+ * A default (sid=0), is used for the first settings form and added as the
+ * "default" first option (radio) in each state's settings forms.
+ */
+function workflow_field_control_menu() {
+  $items = array();
+  $valid_entity_types = array(
+    'node',
+    //'field_collection_item', 'taxonomy_term', 'user'
+  );
+  // Based on field_ui_menu():
+  // Create tabs for all possible bundles.
+  foreach (entity_get_info() as $entity_type => $entity_info) {
+    $valid_entity_type = in_array($entity_type, $valid_entity_types);
+    if ($entity_info['fieldable'] && $valid_entity_type) {
+      foreach ($entity_info['bundles'] as $bundle_name => $bundle_info) {
+        if (isset($bundle_info['admin'])) {
+          //// Get the workflow attached to this bundle, skip if needed
+          //$workflow = workflow_get_workflows_by_type($bundle, $entity_type);
+          //if (empty($workflow->wid)) {
+          //  continue;
+          //}
+          //
+          // Extract path information from the bundle.
+          $path = $bundle_info['admin']['path'];
+          // Different bundles can appear on the same path (e.g. %node_type and
+          // %comment_node_type). To allow field_ui_menu_load() to extract the
+          // actual bundle object from the translated menu router path
+          // arguments, we need to identify the argument position of the bundle
+          // name string ('bundle argument') and pass that position to the menu
+          // loader. The position needs to be casted into a string; otherwise it
+          // would be replaced with the bundle name string.
+          if (isset($bundle_info['admin']['bundle argument'])) {
+            $bundle_arg = $bundle_info['admin']['bundle argument'];
+            $bundle_pos = (string) $bundle_arg;
+          }
+          else {
+            $bundle_arg = $bundle_name;
+            $bundle_pos = '0';
+          }
+          
+          // Extract access information, providing defaults.
+          $access = array_intersect_key(
+            $bundle_info['admin'],
+            drupal_map_assoc(array('access callback', 'access arguments'))
+          );
+          $access += array(
+            'access callback' => 'user_access',
+            'access arguments' => array('administer site configuration'),
+          );
+          
+          // 'Manage field control' tab.
+          $items["$path/field-control"] = array(
+            'title' => 'Manage field control',
+            'page callback' => 'drupal_get_form',
+            'page arguments' => array('workflow_field_control_form', $entity_type, $bundle_arg, '0'),
+            'type' => MENU_LOCAL_TASK,
+            'weight' => 80, // Push this toward the end, past comments etc...
+            'file' => 'workflow_field_control.admin.inc',
+          ) + $access;
+          
+          // Get the workflow states for this bundle
+          $workflow_states =
+            workflow_field_control_states_by_type($entity_type, $bundle_name);
+            
+          // @todo I suspect that we could use a load function for our workflow
+          // state variable at the end of the path to ensure a single value on
+          // the menu path registration.
+
+          // Secondary tabs.
+          // The same base $path for the menu item (with a placeholder) can be
+          // used for all bundles of a given entity type; but depending on
+          // administrator settings, each bundle has a different set of workflow
+          // states available for customization. So we define menu items for all
+          // states available for that bundle.
+          $weight = 0;
+          $states = array(
+            0 => array(
+              'label' => t('Default'),
+              'weight' => -100,
+            )
+          ) + $workflow_states;
+          foreach ($states as $sid => $state) {
+            $callback_args['sid'] = $sid;
+            $sid_pos = substr_count($path, '/') + 2;
+            $items["$path/field-control/$sid"] = array(
+              'title' => $state['label'],
+              // @todo Use a custom access callback/argument to filter the bundle type
+              'access callback' =>'_workflow_field_control_menu_access',
+              'access arguments' => array($entity_type, $bundle_arg, (string) $sid),
+              'page callback' => 'drupal_get_form',
+              'page arguments' => array('workflow_field_control_form', $entity_type, $bundle_arg, (string) $sid),
+              'type' => ($sid == 0 ? MENU_DEFAULT_LOCAL_TASK : MENU_LOCAL_TASK),
+              'weight' => $state['weight'],
+              'file' => 'workflow_field_control.admin.inc',
+            ) + $access;
+          }          
+        }
+      }
+    }
+  }
+  
+  return $items;
+}
+
+/**
+ * Menu access callback for the field settings pages.
+ */
+function _workflow_field_control_menu_access($entity_type, $bundle, $sid) {
+  //dpm(func_get_args(), 'func_get_args()');
+  // First see if the user should be here
+  if (!user_access('administer site configuration')) {
+    return FALSE;
+  }
+  
+  // Ensure we get a bundle name
+  $bundle = field_extract_bundle($entity_type, $bundle);
+  
+  // Get the workflow states for this bundle
+  $workflow_states =
+    workflow_field_control_states_by_type($entity_type, $bundle);
+  //dpm($workflow_states, '$workflow_states');
+  
+  // Do not show this on bundles that don't have a workflow.
+  // @todo Is this what we want?  It is likely better to use a standard field
+  // access module for bundles that aren't controlled by a workflow.
+  if (empty($workflow_states)) {
+    return FALSE;
+  }
+  
+  // The default is always available
+  if ($sid == 0) {
+    return TRUE;
+  }
+  
+  //// Get the workflow attached to this bundle
+  //$workflow = workflow_get_workflows_by_type($bundle, $entity_type);
+  
+  $visibility = in_array((int) $sid, array_keys($workflow_states));
+    
+  // Is a workflow state associated with this bundle?
+  return $visibility;
+}
+
+
+/**
+ * Implements hook_theme().
+ */
+function workflow_field_control_theme() {
+  return array(
+    'workflow_field_control_form_table' => array(
+      'render element' => 'form',
+    )
+  );
+}
+
+function theme_workflow_field_control_form_table($vars) {
+  $form = $vars['form'];
+  //dpm($form, '$form');
+  
+  $header = $form['wfc_header']['#value'];
+  //dpm($header, '$header');
+  $rows = array();
+  $row_indexes = element_children($form['wfc_rows']);
+  foreach ($row_indexes as $index) {
+    $data = &$form['wfc_rows'][$index];
+    // Build each row by hand
+    $row = array();
+    foreach ($data as $key=>&$cell) {
+      if ($key === '' || $key[0] !== '#') {
+        // @todo Any special handling?
+        $row[] = array('data' => render($cell));
+      }
+    }
+    $rows[] = $row;
+  }
+  //dpm($rows, '$rows');
+
+  $table = theme('table', array(
+    'header' => $header,
+    'rows' => $rows,
+    'empty' => t('There are no fields attached to this entity.'),
+    'attributes' => array('class' => array('form-table')),
+  ));
+  
+  //$submit = render($elements['action']);
+  
+  return $table . drupal_render_children($form);
+}
+
+
+/**
+ * Implements hook_form_alter().
+ */
+function workflow_field_control_form_alter(&$form, &$form_state, $form_id) {
+  // Do nothing if this user cannot participate in workflows
+  // @todo Allowing all users to be impacted for now.
+  //if (!user_access('participate in workflow')) {
+  //  return;
+  //}
+  
+  //dpm($form_id, '$form_id');
+
+  global $user;
+
+  // Bail for user 1.  User other accounts for testing.
+  if (!empty($user->uid) && $user->uid == 1) {
+    return;
+  }
+
+  // Get the current user's roles.
+  $roles = !empty($user->roles) ? $user->roles : array(0 => 'anonymous user');
+  
+  // Is this an entity edit form?
+  $valid_form_ids = _workflow_field_control_fieldable_entity_edit_form_ids();
+  if (!in_array($form_id, $valid_form_ids)) {
+    return;
+  }
+
+  // Get the entity_type and bundle values for this form.
+  // @todo Adjust if there is a better technique to get this data.
+  $entity_type = '';
+  $bundle = '';
+  $entity = NULL;
+  $id = 0;
+  if (!empty($form_state['node'])) {
+    $entity = $form_state['node'];
+    $entity_type = 'node';
+    $bundle = $entity->type;
+    $id = isset($entity->nid) ? $entity->nid : 0;
+    // If this is not a valid node edit form, exit.
+    if (empty($form['#node_edit_form'])) {
+      return;
+    }
+  }
+  else {
+    // @todo Handle other entity types properly.
+    // For now, just exit.
+    return;
+  }
+  $is_new = empty($id);
+  
+
+  $sid = 0; // Initialize
+
+  // For new entities, default to the $sid for "(creation)" state.
+  // If this is not a workflow, it will leave $sid = 0
+  if ($is_new) {
+    $workflow_states =
+      workflow_field_control_states_by_type($entity_type, $bundle);
+    foreach ($workflow_states as $temp_sid=>$temp_state) {
+      if ($temp_state['label'] == '(creation)') {
+        $sid = $temp_sid;
+        break;
+      }
+    }
+  }
+  // Not new, get the state for this entity.  Checks both the node (deprecated)
+  // workflow type and workflowfield type values.
+  else {
+    $sid = (int) workflow_node_current_state($entity, $entity_type);
+  }
+  $state = workflow_state_load_single($sid);
+  if (!$sid) {
+    $sid = 0;
+    $state = (object) array(
+      'sid' => $sid,
+      'wid' => 0,
+      'weight' => -100,
+      'sysid' => 0, // NOTE: This is protected in the real object
+      'state' => t('Default'), // NOTE: This is protected in the real object
+      'status' => 1,
+    );
+  }
+  
+  // Get the settings for bundle and state (or default).
+  $settings = workflow_field_control_load_multiple(array(
+    'entity_type' => $entity_type,
+    'bundle' => $bundle,
+    'sid' => $sid,
+  ));
+  //dpm($settings, '$settings');
+//  dpm($form, '$form:before');
+  
+  $debug_settings = array();
+  
+  // Parse the settings items and modify this form's settings as needed.
+  foreach ($settings as $field_name=>$rid_settings) {
+    // Do nothing if there is no setting for this role.
+    $intersecting_roles = array_intersect_key($roles, $rid_settings);
+    if (empty($intersecting_roles)) {
+      continue;
+    }
+    
+    // Initialize our access flags.
+    $disabled = NULL;
+    $view = NULL;
+    $edit = NULL;
+    $required = NULL;
+
+    // Parse settings, which are strictly additive. The first positive
+    // increase in permission should be honored. Any others are ignored.
+    foreach ($rid_settings as $rid=>$setting) {
+      // Only check the roles for this user
+      if (in_array($rid, array_keys($roles))) {
+        $disabled = ($disabled === FALSE) ?
+          FALSE : (boolean) $setting->disabled;
+        $view = ($view === TRUE) ?
+          TRUE : (boolean) $setting->view;
+        $edit = ($edit === TRUE) ?
+          TRUE : (boolean) $setting->edit;
+        $required = ($required === TRUE) ?
+          TRUE : (boolean) $setting->required;
+      }
+    }
+    
+    // Useful for debugging.
+    //$debug_settings[$field_name] = array(
+    //  'disabled' => $disabled,
+    //  'view' => $view,
+    //  'edit' => $edit,
+    //  'required' => $required,
+    //);
+    
+    // Assign field settings.
+    if (!is_null($disabled)) {
+      // The "disabled" flag really means we should hide the field.
+      $form[$field_name]['#access'] = !$disabled;
+      
+      // Input is disabled if we should only be able to view, but not edit.
+      $form[$field_name]['#disabled'] = ($view && !$edit);
+      
+      // Get the field language and use our _mark_required() callback.
+      $lang = (!empty($form[$field_name]['#language'])) ?
+        $form[$field_name]['#language'] : LANGUAGE_NONE;
+      _workflow_field_control_mark_required($form[$field_name][$lang], $required);
+    }
+  }
+  //dpm($debug_settings, '$debug_settings');
+//  dpm($form, '$form:after');
+}
+
+/**
+ * Parse a form element for the #required setting and assign where needed.
+ * NOTE: This is a recursive funtion that looks for children.
+ */
+function _workflow_field_control_mark_required(&$element, $required) {
+  // Is this field required and not a file field type?
+  $form_field_type = isset($element['#type']) ? $element['#type'] : '';
+  $file_fields = array('file', 'image', 'managed_file', 'mfw_managed_file');
+  if (in_array($form_field_type, $file_fields)) {
+    return;
+  }
+  else {
+    // @todo Handle file fields being required.
+    // @see https://api.drupal.org/api/drupal/developer%21topics%21forms_api_reference.html/7#required
+  }
+
+  if (is_array($element)) {
+    foreach ($element as $key=>&$value) {
+      if ($key === '#required' && !is_array($value)) {
+        $value = (is_int($value)) ? (int) $required : (boolean) $required;
+      }
+      elseif (($key !== '' && $key[0] !== '#' && $key !== 'form')) {
+        _workflow_field_control_mark_required($value, $required);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_node_access().
+ */
+function workflow_field_control_node_access($node, $op, $account) {
+  // Don't impact the 'create' operation, use the node permission for that.
+  if ($op == 'create') {
+    return NODE_ACCESS_IGNORE;
+  }
+
+  // Bail for user 1.  User other accounts for testing.
+  if (!empty($account->uid) && $account->uid == 1) {
+    return NODE_ACCESS_IGNORE;
+  }
+
+  // Don't redo this work more than once per page call.
+  $return = &drupal_static(__FUNCTION__, array());
+  $uid = (empty($account->uid)) ? 0 : $account->uid;
+  $type = is_string($node) ? $node : $node->type;
+  $nid = (empty($node->nid)) ? 0 : $node->nid;
+  $key = "$uid|$nid|$type|$op";
+
+  if (!isset($return[$key])) {
+    // Get the current state, if this is an existing node object
+    $sid = 0; // Initialize
+    if ($nid) {
+      $sid = workflow_node_current_state($node, 'node');
+    }
+    
+    // Get a list of data for this bundle.
+    $settings = workflow_field_control_load_multiple(
+      array(
+        'entity_type' => 'node',
+        'bundle' => $type,
+        'sid' => $sid,
+      )
+    );
+    
+    // Do nothing if we have no global settings saved
+    if (empty($settings['global'])) {
+      $return[$key] = NODE_ACCESS_IGNORE;
+      return $return[$key];
+    }
+    
+    // If the account has no roles, only check anonymous.
+    $rids = (empty($account->roles)) ? array(0) : array_keys($account->roles);
+    
+    // Initialize with no rights
+    $view = FALSE;
+    $edit = FALSE;
+    $delete = FALSE;
+    
+    // Get the highest permission for this accounts roles
+    $processed = FALSE;
+    foreach ($rids as $rid) {
+      if (!empty($settings['global'][$rid]) ) {
+        $setting = $settings['global'][$rid];
+        $processed = TRUE;
+        if (!$setting->disabled) {
+          if (!$delete && $setting->required) {
+            $view = $edit = $delete = TRUE;
+            break; // Nothing left to check, full access allowed.
+          }
+          elseif (!$edit && $setting->edit) {
+            $view = $edit = TRUE;
+          }
+          elseif (!$view && $setting->view) {
+            $view = TRUE;
+          }
+        }
+      }
+    }
+    
+    // This user isn't in a configured role, so defer to other access checks.
+    if (!$processed) {
+      $return[$key] = NODE_ACCESS_IGNORE;
+      return $return[$key];
+    }
+    
+    // Now deal with the operation.
+    switch ($op) {
+      case 'view':
+        $return[$key] = ($view) ? NODE_ACCESS_ALLOW : NODE_ACCESS_DENY;
+        break;
+      case 'update':
+        $return[$key] = ($edit) ? NODE_ACCESS_ALLOW : NODE_ACCESS_DENY;
+        break;
+      case 'delete':
+        $return[$key] = ($delete) ? NODE_ACCESS_ALLOW : NODE_ACCESS_DENY;
+        break;
+    }
+  }
+
+  return $return[$key];
+}
+
+// @todo Consider using hook_field_access().
+
+/**
+ * Implements hook_entity_view().
+ *
+ * Impact field visibility.
+ */
+function workflow_field_control_entity_view($entity, $entity_type, $view_mode, $langcode) {
+  // Do nothing if this user cannot participate in workflows
+  if (!user_access('participate in workflow')) {
+    return;
+  }
+
+  // Get the current user's roles
+  global $user;
+  $roles = !empty($user->roles) ? $user->roles : array(0 => 'anonymous user');
+  
+  // Get the cached field control settings for this bundle and current
+  // state or default if no state available.  Checks both the node (deprecated)
+  // workflow type and workflowfield type values.
+  list($id, $vid, $bundle) = entity_extract_ids($entity_type, $entity);
+  $sid = workflow_node_current_state($entity, $entity_type);
+  if (!$sid) {
+    $sid = 0;
+  }
+  
+  // Get a list of data for this bundle.
+  $settings = workflow_field_control_load_multiple(
+    array(
+      'entity_type' => $entity_type,
+      'bundle' => $bundle,
+      'sid' => $sid,
+    )
+  );
+  
+  // @todo Do we need to handle the $view_mode?
+  
+  // Parse the settings items and modify this node's field visibility.
+  foreach ($settings as $field_name=>$rid_settings) {
+    // Skip our global settings
+    // @see hook_node_access()
+    if ($field_name == 'global') {
+      continue;
+    }
+    // Assume that this user does not have access unless there is a setting
+    // that specifies that they do.
+    $enabled = FALSE;
+    foreach ($rid_settings as $rid=>$setting) {
+      // Only check the roles for this user
+      if (in_array($rid, array_keys($roles))) {
+        $enabled = (!$setting->disabled && $setting->view);
+        // Accept the first positive value
+        if ($enabled) {
+          break;
+        }
+      }
+    }
+    $entity->content[$field_name]['#access'] = $enabled;
+  }
+}
+
+// @todo Remove records when a content type or field instance is deleted.
+// Hooks for deleted field instances and content types?
+// There are some below, but are there others to consider?
+
+/**
+ * Implements hook_field_attach_delete_bundle().
+ *
+ * Remove the records for this bundle when the bundle is deleted.
+ * @see https://api.drupal.org/api/drupal/modules!field!field.attach.inc/function/field_attach_delete_bundle/7
+ * @todo Replace with a better method if one exists.
+ */
+function workflow_field_control_field_attach_delete_bundle($entity_type, $bundle, $instances) {
+  return db_delete('workflow_field_control')
+    ->condition('entity_type', $entity_type)
+    ->condition('bundle', $bundle)
+    ->execute();  
+}
+
+/**
+ * Implements hook_field_attach_rename_bundle().
+ *
+ * Renames the bundle in records when needed.
+ * @see https://api.drupal.org/api/drupal/modules%21field%21field.attach.inc/function/field_attach_rename_bundle/7
+ * @todo Replace with a better method if one exists.
+ */
+function workflow_field_control_field_attach_rename_bundle($entity_type, $bundle_old, $bundle_new) {
+  // Do nothing if the bundle names are invalid.
+  if (empty($bundle_new) || empty($bundle_old)) {
+    return;
+  }
+  
+  return db_update('workflow_field_control')
+    ->fields(array('bundle' => $bundle_new))
+    ->condition('entity_type', $entity_type)
+    ->condition('bundle', $bundle_old)
+    ->execute();  
+}
+
+
+/**
+ * @param string $op The CRUD function name
+ * @param mixed $data The data to use
+ * @return mixed Loaded data or FALSE on failure.
+ */
+function workflow_field_control_crud($op, $data) {
+  $missing_pk = (!isset($data['sid']) || empty($data['rid'])
+    || empty($data['entity_type']) || empty($data['bundle'])
+    || empty($data['field_name'])
+  );
+  switch ($op) {
+    case 'create':
+      // Update if the record exists
+      if (workflow_field_control_crud('read', $data)) {
+        return workflow_field_control_crud('update', $data);
+      }
+      else {
+        return drupal_write_record('workflow_field_control', $data);
+      }
+      break;
+    
+    case 'read':
+      if ($missing_pk) {
+        return FALSE;
+      }
+      $return = db_select('workflow_field_control', 'wfc')
+        ->fields('wfc')
+        ->condition('sid', $data['sid'])
+        ->condition('rid', $data['rid'])
+        ->condition('entity_type', $data['entity_type'])
+        ->condition('bundle', $data['bundle'])
+        ->condition('field_name', $data['field_name'])
+        ->execute()
+        ->fetchObject();
+      if ($return) {
+        $return->options_default = ($return->disabled) ? 0 : bindec(
+          (string) $return->required .
+          (string) $return->edit .
+          (string) $return->view
+        );
+        $return->is_default = ($data['sid'] == 0);
+      }
+      return $return;
+    
+    case 'update':
+        $pk = array('sid', 'rid', 'entity_type', 'bundle', 'field_name');
+        return drupal_write_record('workflow_field_control', $data, $pk);
+    
+    case 'delete':
+      if ($missing_pk) {
+        return FALSE;
+      }
+      return db_delete('workflow_field_control')
+        ->condition('sid', $data['sid'])
+        ->condition('rid', $data['rid'])
+        ->condition('entity_type', $data['entity_type'])
+        ->condition('bundle', $data['bundle'])
+        ->condition('field_name', $data['field_name'])
+        ->execute();
+  }
+  
+  // Fail if we haven't returned a good value.
+  return FALSE;
+}
+
+/**
+ * Delete multiple values.
+ * NOTICE: This is very destructive.  Use with caution.
+ * 
+ *
+ * @param array $data The fields to reference.
+ *   Searchable keys include sid, rid, entity_type, bundle, and field_name.
+ * @return mixed The number of deleted items or FALSE on failure.
+ */
+function workflow_field_control_delete_multiple($data) {
+  $missing_keys = (!isset($data['sid']) || empty($data['rid'])
+    || empty($data['entity_type']) || empty($data['bundle'])
+  );
+  
+  $query = db_delete('workflow_field_control');
+  if (!empty($data['sid'])) {
+    $query->condition('sid', $data['sid']);
+  }
+  if (!empty($data['rid'])) {
+    $query->condition('rid', $data['rid']);
+  }
+  if (!empty($data['entity_type'])) {
+    $query->condition('entity_type', $data['entity_type']);
+  }
+  if (!empty($data['bundle'])) {
+    $query->condition('bundle', $data['bundle']);
+  }
+  if (!empty($data['field_name'])) {
+    $query->condition('field_name', $data['field_name']);
+  }
+  $return = $query->execute();
+  
+  return $return;
+}
+
+/**
+ * Load multiple values.  This is a helper function for:
+ * _workflow_field_control_load_multiple().
+ *
+ * @param array $data The fields to reference.
+ *   Searchable keys include sid, rid, entity_type, bundle, and field_name.
+ * @return array The values or an empty array.
+ */
+function _workflow_field_control_load_multiple($data) {
+  // @todo Add a cache for this data return, and allow for a reset.
+  // Use key:value pairs separated by pipe characters for the conditionals in
+  // the unique cache key.
+  
+  $return = array();
+  $query = db_select('workflow_field_control', 'wfc')->fields('wfc');
+  if (!empty($data['entity_type'])) {
+    $query->condition('entity_type', $data['entity_type']);
+  }
+  else {
+    $query->orderBy('entity_type');
+  }
+  if (!empty($data['bundle'])) {
+    $query->condition('bundle', $data['bundle']);
+  }
+  else {
+    $query->orderBy('bundle');
+  }
+  if (!empty($data['field_name'])) {
+    $query->condition('field_name', $data['field_name']);
+  }
+  else {
+    $query->orderBy('field_name');
+  }
+  if (isset($data['sid'])) {
+    $query->condition('sid', $data['sid']);
+  }
+  else {
+    $query->orderBy('sid');
+  }
+  if (isset($data['rid'])) {
+    $query->condition('rid', $data['rid']);
+  }
+  else {
+    $query->orderBy('rid');
+  }
+
+  $result = $query->execute();
+  while ($record = $result->fetchObject()) {
+    $return[] = $record;
+  }
+  
+  return $return;
+}
+
+/**
+ * Load multiple settings, keyed by the field_name.
+ *
+ * @param array $data.
+ *
+ * @return array The values.
+ */
+function workflow_field_control_load_multiple($data) {
+  $return = array();
+  $missing_keys = (!isset($data['sid'])
+    || empty($data['entity_type']) || empty($data['bundle'])
+  );
+  
+  if (!$missing_keys) {
+    // Get the default settings
+    $defaults = _workflow_field_control_load_multiple(
+      array_merge($data, array('sid' => 0))
+    );
+    // Cycle through the defaults, since it will always have all fields
+    foreach ($defaults as $setting) {
+      $data['field_name'] = $setting->field_name;
+      $data['rid'] = $setting->rid;
+      // If we aren't looking up the default settings, get the state's setting.
+      // A state's setting exists only if we aren't using the default.
+      if ($data['sid'] && ($state_setting = workflow_field_control_crud('read', $data))) {
+        $setting = $state_setting;
+      }
+      else {
+        $setting->is_default = TRUE;
+      }
+      $setting->options_default = ($setting->disabled) ? 0 : bindec(
+        (string) $setting->required .
+        (string) $setting->edit .
+        (string) $setting->view
+      );
+      $return[$data['field_name']][$data['rid']] = $setting;
+    }
+  }
+  
+//  dpm($return, '$return');
+  
+  return $return;
+}
+
+
+/**
+ * Get the workflow states for a bundle, if available.
+ *
+ * @param string $entity_type
+ * @param string $bundle
+ *
+ * @return array Keyed on the 'sid' with an assoc. array of values.
+ */
+function workflow_field_control_states_by_type($entity_type, $bundle) {
+  $workflow_states = array();
+  $workflow = workflow_get_workflows_by_type($bundle, $entity_type);
+  if (!empty($workflow->states)) {
+    foreach ($workflow->states as $sid=>$state) {
+      if ($state->status) {
+        $workflow_states[$sid] = array(
+          'label' => $state->label(),
+          'weight' => $state->weight,
+        );
+      }
+    }
+  }
+  
+  return $workflow_states;
+}
+
+/**
+ * Get fieldable bundles
+ *
+ * @return array A list of bundle names that are fieldable
+ */
+function _workflow_field_control_fieldable_bundles() {
+  // @todo Consider a better caching mechanism.
+  static $bundles = array();
+  
+  if (empty($bundles)) {
+    foreach (entity_get_info() as $entity_type => $entity_info) {
+      if ($entity_info['fieldable']) {
+        foreach ($entity_info['bundles'] as $bundle_name => $bundle_info) {
+          $bundles[$bundle_name] = $bundle_info['label'];
+        }
+      }
+    }
+  }
+  
+  return $bundles;
+}
+
+/**
+ * Get bundle edit form_id values.
+ *
+ * @see entity_ui_get_form().
+ *
+ * @return array A list of string values for valid entity edit form_id values.
+ */
+function _workflow_field_control_fieldable_entity_edit_form_ids() {
+  // @todo Consider a better caching mechanism.
+  static $form_ids = array();
+  
+  if (empty($form_ids)) {
+    // @todo Review this technique of gathering form_id values for entities
+    // and change if there is a more appropriate method.
+    foreach (entity_get_info() as $entity_type => $entity_info) {
+      if ($entity_info['fieldable']) {
+        foreach ($entity_info['bundles'] as $bundle_name => $bundle_info) {
+          //$form_id = (!isset($bundle_name) || $bundle_name == $entity_type) ?
+          //  $entity_type . '_form' :
+          //  $entity_type . '_edit_' . $bundle_name . '_form';
+          $form_id = $entity_type . '_form';
+          $form_ids[] = ($entity_type == 'node' && isset($bundle_name)) ?
+            $bundle_name . '_' . $form_id : $form_id;
+        }
+      }
+    }
+    $form_ids = array_unique($form_ids);
+  }
+  
+  return $form_ids;
+}
+
+
+/**
+ * Callback to get the current version of the workflow module.
+ *
+ * @return string The portion after the "7.x", which we don't need.
+ */
+function _workflow_field_control_get_workflow_version() {
+  $version = 0;
+  $path = drupal_get_path('module', 'workflow') . '/workflow.info';
+  $info = drupal_parse_info_file($path);
+  if (!empty($info['version'])) {
+    list(, $version) = array_pad(explode('-', $info['version']), 2, 0);
+  }
+
+  return (string) $version;
+}

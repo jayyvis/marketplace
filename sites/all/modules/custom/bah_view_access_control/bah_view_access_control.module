@@ -1,0 +1,18 @@
+<?php
+
+/*
+ * Implements hook_views_pre_render().
+ */
+function bah_view_access_control_views_pre_render(&$view) {
+  if ($view->name == 'my_project_requests') {
+    if (!empty($view->result)){
+      $results = & $view->result;
+
+      foreach ($results as $key => $result) {
+        if (!node_access('view', node_load($result->nid))) {
+          unset($view->result[$key]);
+        }
+      }
+    }
+  }
+}

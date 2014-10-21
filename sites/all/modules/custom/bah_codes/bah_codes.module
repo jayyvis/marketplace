@@ -1,0 +1,112 @@
+<?php
+
+/**
+ * Implements hook_uc_order().
+ */
+function bah_codes_uc_order($op, $order, $arg2) {
+  switch ($op) {
+    case 'view':
+      break;
+    case 'load':
+      break;
+    case 'save':
+      break;
+  }
+}
+
+/**
+ * Implements hook_uc_checkout_pane().
+ */
+function bah_codes_uc_checkout_pane() {
+  $panes['bah_codes_pane'] = array(
+    'callback' => 'bah_codes_pane_codes',
+    'title' => t('Provision Services to'),
+    'weight' => 2,
+    'process' => TRUE,
+    'collapsible' => TRUE,
+  );
+  return $panes;
+}
+
+
+
+/**
+ * Callback for hook_checkout_pane
+ * @see http://api.drupalize.me/api/drupal/function/uc_checkout_pane_callback/7
+ */
+function bah_codes_pane_codes($op, $order, $form = NULL, &$form_state = NULL) {
+  require_once(drupal_get_path('module', 'uc_cart') . '/uc_cart_checkout_pane.inc');
+
+  $description = t("AUS for Austin.  IAD for Viriginia.");
+  switch($op) {
+    // Return an array with two keys, "contents" and an optional "description".
+    // "contents" is a form array to collect the checkout data for the pane.
+    // "description" provides help text for the pane as a whole.
+    case 'view':
+
+      // Get the 'location_code' terms (if they exist) for the select field.
+      // @todo Add a "description" field to this vocabulary and load as the
+      // options "value" with the term name as the "key".
+      $vocabulary = taxonomy_vocabulary_machine_name_load('location_code');
+      $location_codes = array();
+      if (!empty($vocabulary->vid)) {
+        $locations = taxonomy_get_tree($vocabulary->vid);
+        foreach ($locations as $location) {
+          $location_codes[] = $location->name;
+        }
+      }
+
+      $contents['location_code'] = array(
+        '#type' => 'select',
+        '#title' => t('Provision Services to'),
+        '#description' => $description,
+        '#options' => drupal_map_assoc($location_codes),
+        '#required' => TRUE,
+        '#weight' => 1,
+        '#default_value' => (empty($_SESSION['location_code'])) ?
+            '' : $_SESSION['location_code'],
+      );
+
+      //return array('contents' => $contents, 'description' => $description);
+      return array('contents' => $contents, 'description' => '');
+      break;
+
+    // An array containing review sections. A review section contains "title"
+    // and "data" keys which have HTML to be displayed on the checkout
+    // review page.
+    case 'review':
+      $review = NULL;
+      if (isset($order->data['location_code'])) {
+        $review[] = array(
+          'title' => t('Provision Services to'),
+          'data' => check_plain($order->data['location_code']),
+        );
+        // Kill our session variable, since we don't need it anymore.
+        unset($_SESSION['location_code']);
+      }
+      return $review;
+      break;
+
+    // A boolean indicating that checkout should continue. During this op,
+    // $order should be modified with the values in
+    // $form_state['values']['panes'][PANE_ID].
+    case 'process':
+      if (isset($form_state['values']['panes']['bah_codes_pane']['location_code'])) {
+        // Save a session variable for later:
+        $_SESSION['location_code'] = $form_state['values']['panes']['bah_codes_pane']['location_code'];
+        $order->data['location_code'] = $_SESSION['location_code'];
+        return TRUE;
+      }
+      else {
+        // @todo Display an error message to the user if not already done.
+        return FALSE;
+      }
+      break;
+
+    // A settings form which can be used with system_settings_form().
+    case 'settings':
+      break;
+
+  }
+}
+

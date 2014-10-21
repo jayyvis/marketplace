@@ -1,0 +1,3776 @@
+*, *:before, *:after {
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+.fade {
+  opacity: 0.75;
+  transition: opacity .25s ease-in-out;
+  -moz-transition: opacity .25s ease-in-out;
+  -webkit-transition: opacity .25s ease-in-out;
+}
+
+.fade:hover {
+  opacity: 1;
+}
+
+.hero-header {
+  background: url("../img/hero-estimator.png");
+  background-size: cover;
+  background-repeat: no-repeat;
+  height: 503px;
+}
+.interior-header {
+  background: url("../img/hero-estimator.png");
+  background-size: cover;
+  background-repeat: no-repeat;
+  height: 174px;
+}
+
+@media (min-width: 320px) {
+  div.interior-header {
+    height: 294px;
+    margin: 0;
+    padding: 0;
+  }
+
+  div.hero-header {
+    height: 444px;
+    margin: 0;
+    padding: 0;
+  }
+
+  nav.utility {
+    height: 44px;
+    padding: 0;
+    margin: 0;
+  }
+  nav.utility ul {
+    width: 100%;
+    height: 64px;
+    display: inline-block;
+    margin: 0;
+    padding: 0;
+  }
+  nav.utility ul li {
+    width: 25%;
+    height: 44px;
+    margin: 0;
+    padding: 0;
+  }
+  nav.utility ul li a.login,
+  nav.utility ul li a.register {
+    border-radius: 0;
+    width: 100%;
+    text-align: center;
+    float: left;
+    height: 44px;
+    font-weight: bold;
+    margin: 0;
+    position: relative;
+    top: 30%;
+    -webkit-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+  }
+  nav.utility ul li a.register {
+    background-color: #5f9ece;
+    transition: .5s ease-in-out;
+  }
+  nav.utility ul li a.login {
+    background-color: #fbecb8;
+    transition: .5s ease-in-out;
+  }
+  nav.utility ul li a.register:hover {
+    background-color: #022644;
+    transition: .25s ease-in-out;
+  }
+  nav.utility ul li a.login:hover {
+    background-color: #406AAE;
+    transition: .25s ease-in-out;
+  }
+
+  nav.main {
+    min-width: 300px;
+    background-color: #022644;
+    height: 250px;
+    padding: 10px 0;
+  }
+  nav.main div.logo {
+    background-image: url("../img/boozallen.gif");
+    background-position: center center;
+    background-repeat: no-repeat;
+    height: 72px;
+    display: block;
+    margin: 0 auto;
+  }
+  nav.main ul {
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    height: 165px;
+  }
+  nav.main ul li {
+    width: 50%;
+    float: left;
+    height: 44px;
+    text-align: center;
+  }
+  nav.main ul li a {
+    width: 50%;
+  }
+  nav.main ul li a:hover {
+    background: #406AAE;
+    border: none;
+    color: #464646;
+  }
+  nav.main ul li.home,
+  nav.main ul li.catalog,
+  nav.main ul li.learn,
+  nav.main ul li.broker {
+    width: 50%;
+  }
+  nav.main ul li.contact {
+    width: 100%;
+  }
+
+  div.cloud {
+    padding: 0;
+  }
+  div.cloud img {
+    display: none;
+  }
+  div.cloud h2.hero-h2 {
+    padding: 10px 0;
+    height: auto;
+    font-size: 1em;
+    font-weight: bold;
+    text-shadow: 2px 2px black;
+    text-align: center;
+  }
+  div.cloud p.hero-p {
+    font-size: 1em;
+    padding-bottom: 0;
+    margin-bottom: 0;
+    line-height: 20px;
+  }
+
+  a.yellow-bg-link {
+    display: block;
+    background: #406AAE;
+    height: auto;
+    color: #464646;
+    font-size: 1em;
+    text-align: center;
+    margin: 0;
+    padding: 20px 0;
+    opacity: 0.75;
+    transition: opacity .25s ease-out;
+  }
+
+  a.yellow-bg-link:hover {
+    opacity: 1;
+    transition: opacity .25s ease-in-out;
+  }
+
+  a.options3 div.estimate,
+  a.options3 div.learn,
+  a.options3 div.provider {
+    height: auto;
+    padding: 20px 0;
+    background: none;
+    border-bottom: 1px solid #e9e9e9;
+  }
+  a.options3 div.estimate h3,
+  a.options3 div.learn h3,
+  a.options3 div.provider h3 {
+    text-align: center;
+  }
+  a.options3 div.estimate p,
+  a.options3 div.learn p,
+  a.options3 div.provider p {
+    text-align: center;
+  }
+  a.options3 div.estimate:hover, a.options3 div.learn:hover, a.options3 div.provider:hover {
+    background-color: #022644;
+  }
+  a.options3 div.estimate:hover h3, a.options3 div.learn:hover h3, a.options3 div.provider:hover h3 {
+    color: white;
+  }
+  a.options3 div.estimate:hover p, a.options3 div.learn:hover p, a.options3 div.provider:hover p {
+    color: white;
+  }
+
+  section.thanks {
+    padding: 5% 0 20% 0;
+  }
+  section.thanks div.thanksWrapper {
+    background: #e9e9e9;
+    padding: 10%;
+    border-radius: 0;
+  }
+  section.thanks div.thanksWrapper h5 {
+    font-size: 1.25em;
+    font-weight: bold;
+    color: #464646;
+    text-align: center;
+  }
+  section.thanks div.thanksWrapper p {
+    text-align: center;
+  }
+  section.thanks div.thanksWrapper p a:hover {
+    text-decoration: underline;
+  }
+
+  .yellow-hdr {
+    background: #406AAE;
+    height: 50px;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+  }
+  .yellow-hdr div.title {
+    height: 50px;
+  }
+  .yellow-hdr div.title h3 {
+    font-size: 1em;
+    color: black;
+    font-weight: normal;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+  }
+
+  section.catalog-grid {
+    position: relative;
+    height: 100%;
+  }
+  section.catalog-grid .cat-dvdr {
+    border-bottom: 1px solid #e9e9e9;
+    padding: 20px 0;
+  }
+  section.catalog-grid .cat-dvdr:hover {
+    background: #ECEDED;
+  }
+  section.catalog-grid h6 {
+    font-weight: normal;
+    font-size: 1em;
+    color: #7a7a7a;
+    padding: 0 10%;
+    margin: 0;
+    text-align: center;
+  }
+  section.catalog-grid img.rocket {
+    width: 30%;
+    margin-top: 30px;
+  }
+  section.catalog-grid img.wizard {
+    width: 35%;
+    margin-top: 10%;
+    margin-bottom: 10%;
+  }
+  section.catalog-grid img.order {
+    width: 50%;
+    margin-top: 10%;
+    margin-bottom: 10%;
+  }
+
+  div.search-ltGrey select.orderSelect {
+    display: block;
+    margin: 0 auto;
+    margin-top: 12px;
+    width: 280px;
+  }
+
+  section.cart-grid {
+    width: 100%;
+  }
+  section.cart-grid div.cart-box-wrapper {
+    border-bottom: 1px solid #e9e9e9;
+    border-top: none;
+  }
+  section.cart-grid div.cart-box-wrapper div.cart-box {
+    margin: 20px 0;
+  }
+  section.cart-grid div.cart-box-wrapper img {
+    display: none;
+    vertical-align: top;
+    margin: 24px 0 0 0;
+  }
+  section.cart-grid div.cart-box-wrapper h5 {
+    color: #464646;
+    font-weight: bold;
+    font-size: 0.875em;
+    text-align: center;
+  }
+  section.cart-grid div.cart-box-wrapper h6 {
+    font-size: 0.875em;
+    color: #464646;
+    text-align: center;
+  }
+  section.cart-grid div.cart-box-wrapper p {
+    margin-bottom: 2%;
+    font-size: 0.75em;
+    color: #464646;
+    font-weight: normal;
+    text-align: center;
+  }
+  section.cart-grid div.cart-box-wrapper p.ss-param {
+    font-weight: bold;
+    font-size: 1em;
+    padding: 0 0 0 10px;
+  }
+  section.cart-grid div.cart-box-wrapper p[attr="no"]:after {
+    position: relative;
+    content: "X";
+    font-weight: bold;
+    color: #b70606;
+    font-size: 1em;
+    top: 1px;
+    text-align: center;
+  }
+  section.cart-grid div.cart-box-wrapper p[attr="yes"]:after {
+    position: relative;
+    content: "OPTIONAL";
+    font-weight: bold;
+    color: #406AAE;
+    font-size: 1em;
+    top: 1px;
+  }
+  section.cart-grid div.cart-box-wrapper button {
+    border-radius: 50px;
+    color: #464646;
+    background: #FF9D6C;
+    padding: 10px 30px;
+    text-transform: uppercase;
+    font-size: 0.875em;
+    font-weight: 300;
+    clear: both;
+    display: block;
+    margin: 0 auto;
+  }
+  section.cart-grid div.cart-box-wrapper button:hover {
+    background: #FF8D4A;
+    transition: .25s ease-in-out;
+  }
+  section.cart-grid div.cart-box-wrapper:hover {
+    background: #ECEDED;
+  }
+  section.cart-grid div.cart-box-wrapper-rmv-lftDvdr {
+    border-left: none;
+  }
+
+  div.sidebar {
+    width: 100%;
+    border-bottom: 1px solid #e9e9e9;
+    height: auto;
+  }
+  div.sidebar h5.title {
+    background: #FF8D4A;
+    color: #464646;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 1em;
+    padding: 30px 0;
+    margin: 0;
+    height: 80px;
+    text-align: center;
+  }
+  div.sidebar h5.cost {
+    font-size: 1em;
+    font-weight: normal;
+    color: #464646;
+    text-align: center;
+    border-top: 1px solid #e9e9e9;
+    padding: 20px 0 0 0;
+  }
+  div.sidebar h3 {
+    font-weight: bold;
+    font-size: 1.5em;
+    color: #464646;
+    text-align: center;
+  }
+  div.sidebar ol {
+    padding: 20px 0 0 20px;
+    line-height: 350%;
+  }
+  div.sidebar ol li {
+    font-size: 1em;
+    width: 100%;
+    vertical-align: center;
+    margin: 10px 0;
+  }
+  div.sidebar ol li button.remove {
+    cursor: hand;
+    border-radius: 50%;
+    height: 44px;
+    width: 44px;
+    background: #b70606;
+    opacity: 0.75;
+    color: white;
+    vertical-align: middle;
+    padding: 0;
+    margin: 0 20px 0 0;
+    font-size: 0.75em;
+    position: relative;
+    top: 3px;
+  }
+  div.sidebar ol li button.remove:hover {
+    background: #b70606;
+    opacity: 1;
+    transition: .25s ease-in-out;
+  }
+  div.sidebar button.checkout {
+    background: #fbecb8;
+    border-radius: 50px;
+    padding: 10px 40px;
+    margin: 0 auto 20px;
+    color: #464646;
+    text-align: center;
+    text-transform: uppercase;
+    font-weight: bold;
+    display: block;
+  }
+  div.sidebar button.checkout:hover {
+    background: #406AAE;
+    transition: .25s ease-in-out;
+    opacity: 1;
+  }
+
+  section.broker form.broker button.broker {
+    border-radius: 50px;
+    padding: 15px 40px;
+    text-transform: uppercase;
+    font-size: 1.2em;
+    display: block;
+    margin: 0 auto;
+  }
+
+  section.demo h4 {
+    text-align: center;
+    color: #464646;
+    padding: 5% 0 0;
+  }
+  section.demo p {
+    width: 80%;
+    text-align: center;
+    font-weight: 100;
+    display: block;
+    margin: 0 auto;
+  }
+  section.demo p a:hover {
+    text-decoration: underline;
+  }
+  section.demo img.demo {
+    display: none;
+    float: right;
+  }
+  section.demo form.demoForm {
+    padding: 0;
+    display: block;
+    margin: 0 auto;
+  }
+  section.demo form.demoForm div.demoInputs {
+    padding: 5% 25% 10%;
+  }
+  section.demo form.demoForm div.demoInputs input[type="radio"] {
+    display: inline-block;
+    margin: 0 20px;
+  }
+  section.demo form.demoForm div.demoInputs label {
+    font-size: 1em;
+    display: inline-block;
+    margin: 5% 0;
+  }
+  section.demo form.demoForm button.demo {
+    font-weight: bold;
+    border-radius: 50px;
+    padding: 15px 40px;
+    text-transform: uppercase;
+    font-size: 1.2em;
+    display: block;
+    margin: 0 auto;
+  }
+
+  section.quote {
+    padding: 4% 0 1%;
+  }
+  section.quote h4 {
+    color: #464646;
+    padding: 0 20%;
+    font-weight: normal;
+    font-size: 1em;
+    text-align: center;
+  }
+  section.quote h4:before {
+    content: open-quote;
+    font-size: 24pt;
+    text-align: center;
+    line-height: 42px;
+    color: #7a7a7a;
+    float: left;
+    position: relative;
+    top: -10px;
+    left: -10px;
+  }
+  section.quote h4:after {
+    content: close-quote;
+    font-size: 24pt;
+    text-align: center;
+    line-height: 42px;
+    color: #7a7a7a;
+    float: right;
+    position: relative;
+    bottom: -10px;
+    right: -20px;
+  }
+
+  section.faq h3 {
+    padding: 0 0 0 20px;
+  }
+  section.faq dl dd a {
+    text-align: center;
+  }
+
+  section.prov-info h3, section.prov-info h5, section.prov-info p {
+    color: #464646;
+  }
+  section.prov-info h5 {
+    font-weight: bold;
+    padding-bottom: 2%;
+  }
+  section.prov-info p {
+    padding-right: 5%;
+    padding-bottom: 3%;
+  }
+
+  section.logoFarm div.bg-logoFarm {
+    background-size: 100%;
+    min-height: 155px;
+    width: 100%;
+  }
+  section.logoFarm div.bg-logoFarm h4 {
+    font-size: 1em;
+    background: #ECEDED;
+    line-height: 35px;
+  }
+
+  section.wizard p {
+    text-align: center;
+    margin: 5% 0 0;
+  }
+  section.wizard form.wizardForm label {
+    font-weight: normal;
+  }
+  section.wizard form.wizardForm label sup {
+    color: #ff6a6a;
+  }
+  section.wizard form.wizardForm input[type="text"] {
+    border-radius: 5px;
+    height: 50px;
+    margin-bottom: 5%;
+    box-shadow: inset 1px 1px 5px #888888;
+  }
+  section.wizard form.wizardForm input[type="password"] {
+    border-radius: 5px;
+    height: 50px;
+    margin-bottom: 5%;
+    box-shadow: inset 1px 1px 5px #888888;
+  }
+  section.wizard form.wizardForm textarea {
+    min-height: 150px;
+    border-radius: 5px;
+    box-shadow: inset 1px 1px 5px #888888;
+  }
+  section.wizard form.wizardForm select {
+    border-radius: 5px;
+    height: 50px;
+  }
+  section.wizard form.wizardForm button.broker {
+    border-radius: 50px;
+    padding: 15px 40px;
+    text-transform: uppercase;
+    font-size: 1.2em;
+  }
+  section.wizard form.wizardForm small {
+    text-transform: lowercase;
+  }
+  section.wizard form.wizardForm div.question {
+    margin: 3% 0 0;
+  }
+  section.wizard form.wizardForm button.wizardBtn {
+    display: block;
+    margin: 5% auto 10%;
+    border-radius: 50px;
+    padding: 15px 40px;
+    text-transform: uppercase;
+    font-size: 1.2em;
+  }
+  section.wizard div.wizardResult {
+    width: 100%;
+    position: relative;
+    display: block;
+    margin: 3% auto;
+    text-align: center;
+    color: #464646;
+    background: #f0f2f5;
+    border: #e9e9e9;
+    height: 100px;
+    padding: 0;
+    font-weight: bold;
+    border-radius: 10px;
+    border: 1px solid #e9e9e9;
+    box-shadow: inset 2px 2px 5px #888888;
+  }
+  section.wizard div.wizardResult h3 {
+    color: #464646;
+    text-align: center;
+  }
+  section.wizard div.wizardResult img.wand {
+    width: 50px;
+    position: absolute;
+    right: -12px;
+    top: -5px;
+  }
+  section.wizard h4 {
+    text-align: center;
+    color: #464646;
+    padding: 5% 0 0;
+  }
+  section.wizard p {
+    text-align: center;
+    font-weight: 100;
+  }
+  section.wizard button.wizard {
+    font-weight: bold;
+    display: block;
+    margin: 5% auto 35%;
+    border-radius: 50px;
+    padding: 15px 40px;
+    text-transform: uppercase;
+    font-size: 1.2em;
+  }
+  section.wizard button.rerun {
+    display: block;
+    margin: 3% auto 5%;
+    background: #5f9ece;
+    color: white;
+    border-radius: 50px;
+    padding: 10px 30px;
+    text-transform: uppercase;
+    font-size: 0.875em;
+  }
+  section.wizard button.rerun:hover {
+    background: #022644;
+    transition: .25s ease-in-out;
+  }
+
+  section.account h4 {
+    margin: 3% 0;
+    color: #464646;
+  }
+  section.account ul.projectsList {
+    margin: 0;
+    padding: 0;
+  }
+  section.account table.myAcct {
+    margin: 0 0 5% 0;
+  }
+  section.account table.myDetails {
+    margin: 0 0 5% 0;
+    width: 100%;
+  }
+  section.account table.myDetails th[rel="name"] {
+    width: 100px;
+    text-align: left;
+    background: #f2fbff;
+  }
+  section.account table.myDetails th[rel="email"] {
+    width: 100px;
+    text-align: left;
+    background: #f2fbff;
+  }
+  section.account table.myDetails th[rel="password"] {
+    width: 100px;
+    text-align: left;
+    background: #f2fbff;
+  }
+  section.account table.myDetails th[rel="edit"] {
+    width: 100px;
+    text-align: left;
+  }
+  section.account table.myDetails td[attr="usrInfo"] {
+    text-align: left;
+    padding: 0 0 0 20px;
+    background: #ECEDED;
+    font-weight: normal;
+  }
+
+  section.prod-detail div.prod-box h3 {
+    text-align: center;
+  }
+  section.prod-detail div.prod-box h6 {
+    text-align: center;
+  }
+  section.prod-detail div.prod-box p.prod-box-p {
+    text-align: center;
+    margin-bottom: 5%;
+  }
+  section.prod-detail div.prod-box p[attr="no"]:after {
+    text-align: center;
+  }
+  section.prod-detail div.prod-box p[attr="yes"]:after {
+    text-align: center;
+  }
+  section.prod-detail div.prod-box form.prod-detail-inputs select.qty {
+    width: 100%;
+  }
+  section.prod-detail div.prod-box form.prod-detail-inputs button.addTo {
+    width: 100%;
+    display: block;
+    margin: 0 auto;
+  }
+
+  section.confirmation {
+    height: auto;
+    padding-bottom: 4%;
+  }
+  section.confirmation table.confirmTable {
+    margin: 5% 0 5% 0;
+    border: none;
+  }
+  section.confirmation table.confirmTable thead {
+    background: none;
+  }
+  section.confirmation table.confirmTable thead tr, section.confirmation table.confirmTable thead th {
+    border-bottom: 1px solid #e9e9e9;
+  }
+  section.confirmation table.confirmTable th[rel="one"],
+  section.confirmation table.confirmTable th[rel="two"],
+  section.confirmation table.confirmTable th[rel="buttonRmv"] {
+    width: 33.333333%;
+  }
+  section.confirmation table.confirmTable th[rel="one"],
+  section.confirmation table.confirmTable th[rel="two"] {
+    text-align: left;
+  }
+  section.confirmation table.confirmTable tbody tr.returnCat {
+    background: none;
+  }
+  section.confirmation table.confirmTable tbody tr.totalCost {
+    background: none;
+  }
+  section.confirmation table.confirmTable tbody tr.placeOrder {
+    background: none;
+  }
+  section.confirmation table.confirmTable tbody td {
+    padding: 2%;
+  }
+  section.confirmation table.confirmTable tbody td.prov-loc-ttl {
+    text-align: right;
+    font-weight: bold;
+  }
+  section.confirmation table.confirmTable tbody td[rel="desc"] {
+    font-size: 0.675em;
+  }
+  section.confirmation table.confirmTable tbody td[rel="redX"] {
+    color: #b70606;
+    font-weight: bold;
+    text-align: center;
+  }
+  section.confirmation table.confirmTable tbody td[rel="rmvBtn"] {
+    margin: 5% 0;
+  }
+  section.confirmation table.confirmTable tbody td[rel="catBtn"] {
+    margin: 5% 0;
+  }
+  section.confirmation table.confirmTable tbody td[rel="total"] {
+    text-align: right;
+    font-weight: bold;
+  }
+  section.confirmation table.confirmTable tbody td[rel="price"] {
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.4em;
+  }
+  section.confirmation table.confirmTable tbody button.removeCart {
+    font-size: 0.125em;
+    color: white;
+    background: #ff6a6a;
+    margin: 3% 0 0 0;
+    padding: 10px 15px;
+    border-radius: 50px;
+    text-transform: uppercase;
+    display: block;
+    margin: 0 auto;
+  }
+  section.confirmation table.confirmTable tbody button.removeCart:hover {
+    background: #b70606;
+    transition: .25s ease-in-out;
+  }
+  section.confirmation table.confirmTable tbody button.catalog {
+    font-size: 0.25em;
+    color: white;
+    background: #5f9ece;
+    padding: 10px 15px;
+    margin: 3% 0 0 0;
+    border-radius: 50px;
+    text-transform: uppercase;
+    display: block;
+    margin: 0 auto;
+  }
+  section.confirmation table.confirmTable tbody button.catalog:hover {
+    background: #022644;
+    transition: .25s ease-in-out;
+  }
+  section.confirmation table.confirmTable tbody button.ordrBtn {
+    font-size: 1em;
+    color: #464646;
+    font-weight: bold;
+    background: #FF9D6C;
+    padding: 10px 15px;
+    margin: 3% 0 0 0;
+    border-radius: 50px;
+    text-transform: uppercase;
+    display: block;
+    margin: 0 auto;
+  }
+  section.confirmation table.confirmTable tbody button.ordrBtn:hover {
+    background: #FF8D4A;
+    transition: .25s ease-in-out;
+  }
+
+  section.estimator {
+    padding: 0;
+    display: block;
+    margin: 0 auto;
+  }
+  section.estimator dl.estTab dd {
+    width: 100%;
+    text-align: center;
+  }
+  section.estimator dl.estTab dd a {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk {
+    background: #ECEDED;
+  }
+  section.estimator div.estContentBlk div.panel1-1Wrap,
+  section.estimator div.estContentBlk div.panel1-2Wrap,
+  section.estimator div.estContentBlk div.panel1-3Wrap,
+  section.estimator div.estContentBlk div.panel1-4Wrap,
+  section.estimator div.estContentBlk div.panel1-5Wrap {
+    width: 100%;
+  }
+  section.estimator div.estContentBlk div.box {
+    width: 280px;
+    padding: 0 20px;
+    margin-right: 0;
+  }
+  section.estimator div.estContentBlk p {
+    float: left;
+    width: 70%;
+    padding: 0 0 0 2%;
+    font-size: 0.75em;
+    font-weight: normal;
+  }
+  section.estimator div.estContentBlk input {
+    width: 25%;
+    font-size: 1.5em;
+    border-radius: 5px;
+    height: 50px;
+    margin-bottom: 5%;
+    box-shadow: inset 1px 1px 5px #888888;
+  }
+  section.estimator div.estContentBlk button {
+    margin-top: 2%;
+    display: block;
+    margin: 0 auto;
+  }
+  section.estimator div.estContentBlk button[attr="go"] {
+    width: 135px;
+    color: white;
+    margin-top: 5%;
+    background: #FF9D6C;
+    transition: .25s ease-in-out;
+    border-radius: 50px;
+    padding: 15px 40px;
+    text-transform: uppercase;
+    font-size: 1.2em;
+  }
+  section.estimator div.estContentBlk button[attr="go"]:hover {
+    color: #464646;
+    background: #FF8D4A;
+    transition: .25s ease-in-out;
+  }
+  section.estimator div.estContentBlk button[attr="reset"] {
+    color: #022644;
+    display: block;
+    background: none;
+    text-align: center;
+    margin-bottom: 5%;
+  }
+  section.estimator div.estContentBlk button[attr="reset"]:hover {
+    text-decoration: underline;
+  }
+  section.estimator div.estContentBlk span.label {
+    display: block;
+    width: 150px;
+    height: auto;
+    padding: 1%;
+    font-size: 1em;
+    text-transform: uppercase;
+    font-weight: bold;
+    text-align: center;
+    border-radius: 5px 5px 0 0;
+  }
+  section.estimator div.estContentBlk span.gold {
+    background: #e5c100;
+    width: 100%;
+    clear: both;
+  }
+  section.estimator div.estContentBlk span.silver {
+    background: #888888;
+    width: 100%;
+  }
+  section.estimator div.estContentBlk span.bronze {
+    background: #9a572c;
+    width: 100%;
+  }
+  section.estimator div.estContentBlk p.cld-item-1and2 {
+    width: 50%;
+    padding: 20px 10px 0 10px;
+    text-align: right;
+  }
+  section.estimator div.estContentBlk p.cld-item-3and4 {
+    width: 50%;
+    padding: 20px 10px 0 10px;
+    text-align: right;
+  }
+  section.estimator div.estContentBlk input.vms {
+    float: left;
+    width: 25%;
+    padding: 0;
+    margin: 10px 0;
+    text-align: center;
+  }
+  section.estimator div.estContentBlk label.gb-3 {
+    width: 10%;
+    float: left;
+    padding: 5px 0 0 20px;
+  }
+  section.estimator div.estContentBlk label.gb-4 {
+    width: 10%;
+    float: left;
+    padding: 5px 0 0 20px;
+  }
+  section.estimator div.estContentBlk p.pPdng {
+    padding-right: 3px;
+  }
+  section.estimator div.estContentBlk label.vtAl {
+    line-height: 50px;
+    font-weight: bold;
+  }
+  section.estimator div.estContentBlk table.estimatorGlobal th {
+    background: #8B8989;
+  }
+  section.estimator div.estContentBlk table.estimatorGlobal th[attr="vetFacing"],
+  section.estimator div.estContentBlk table.estimatorGlobal th[attr="contDist"],
+  section.estimator div.estContentBlk table.estimatorGlobal th[attr="dataWare"],
+  section.estimator div.estContentBlk table.estimatorGlobal th[attr="lineItemChange"],
+  section.estimator div.estContentBlk table.estimatorGlobal th[attr="exclEntAdmin"],
+  section.estimator div.estContentBlk table.estimatorGlobal th[attr="unitType"],
+  section.estimator div.estContentBlk table.estimatorGlobal th[attr="ppu"],
+  section.estimator div.estContentBlk table.estimatorGlobal th[attr="qty"],
+  section.estimator div.estContentBlk table.estimatorGlobal th[attr="ttl"] {
+    text-align: center;
+  }
+  section.estimator div.estContentBlk table.estimatorGlobal th[attr="lid"] {
+    text-align: left;
+  }
+  section.estimator div.estContentBlk table.estimatorGlobal input[attr="gTotal"],
+  section.estimator div.estContentBlk table.panel5grandTotal input[attr="p5gTotal-5"]  {
+    width: 100%;
+    color: #022644;
+    text-align: center;
+    vertical-align: middle;
+  }
+  section.estimator div.estContentBlk table.estimatorGlobal td[attr="gTotal"] {
+    background: #406AAE;
+    vertical-align: middle;
+  }
+  section.estimator div.estContentBlk table.estimatorGlobal i {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="totals"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="vetFacing"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="contDist"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="dataWare"] {
+    text-align: center;
+    font-size: 0.5em;
+    font-weight: bold;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 tbody tr td {
+    font-size: 0.675em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab3 th[attr="totals"] {
+    width: 50%;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 th[attr="totals"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 th[attr="lineItemChange"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 th[attr="exclEntAdmin"] {
+    font-weight: bold;
+    font-size: 0.5em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 tbody tr td {
+    font-size: 0.625em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 th[attr="totals"] {
+    width: 100px;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper {
+    height: 500px;
+    overflow-y: scroll;
+    border-top: 1px solid #dddddd;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 {
+    margin-bottom: 0;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 input[attr="quantity"] {
+    text-align: center;
+    font-size: 0.875em;
+    width: 100%;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 td[attr="ppu"] {
+    text-align: right;
+  }
+  section.estimator div.estContentBlk table.panel5grandTotal {
+    padding: 0;
+    margin: 0;
+    /*background: #406AAE;*/
+  }
+  section.estimator div.estContentBlk table.panel5grandTotal td[attr="p5gTtlTd"] {
+    width: 60%;
+    text-align: right;
+  }
+  section.estimator div.estContentBlk table.panel5grandTotal input[attr="p5gTotal-5"] {
+    width: 100%;
+  }
+  section.estimator div.estContentBlk p.emailP {
+    width: 100%;
+    font-size: 0.875em;
+    text-align: center;
+    padding: 15px 10px 0;
+  }
+  section.estimator div.estContentBlk button.email {
+    color: white;
+    margin-top: 20px;
+    background: #5f9ece;
+    transition: .25s ease-in-out;
+    border-radius: 50px;
+    padding: 10px 30px;
+    text-transform: uppercase;
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk button.email:hover {
+    background: #022644;
+    transition: .25s ease-in-out;
+  }
+  section.estimator div.estContentBlk p.emailNotice {
+    width: 100%;
+    margin-top: 15px;
+    text-align: center;
+    font-size: 0.75em;
+  }
+  section.estimator div.estContentBlk div.grandTotalRow {
+    width: 100%;
+  }
+  section.estimator div.estContentBlk div.grandTotalRow p.gtHdr {
+    font-size: 1em;
+    width: 100%;
+    font-weight: bold;
+    text-align: center;
+  }
+  section.estimator div.estContentBlk div.grandTotalRow label {
+    text-align: center;
+    width: 100%;
+    margin: 0;
+    padding: 10px 0;
+  }
+  section.estimator div.estContentBlk div.grandTotalRow div[attr="gTotalRow"] {
+    background: #FF8D4A;
+    width: 100%;
+    float: left;
+    margin-bottom: 20px;
+    padding: 10px 0;
+  }
+  section.estimator div.estContentBlk div.grandTotalRow div[attr="gTotalRow"] input[attr="p5gTotal"] {
+    width: 100%;
+  }
+  section.estimator div.estContentBlk div.grandTotalRow div[attr="gTotalRow"] input[attr="gTotal"] {
+    width: 50%;
+    font-size: 1.5em;
+    display: block;
+    margin: 0 auto;
+  }
+  section.estimator div.estContentBlk div.grandTotalRowWide {
+    display: none;
+  }
+}
+@media (min-width: 480px) {
+  div.hero-header {
+    height: 360px;
+  }
+
+  div.interior-header {
+    height: 244px;
+  }
+
+  nav.main {
+    width: 100%;
+    background-color: #022644;
+    height: 200px;
+    padding: 10px 0;
+  }
+  nav.main ul {
+    width: 100%;
+    padding: 0 20px;
+    height: 145px;
+    display: block;
+    margin: 0 auto;
+  }
+  nav.main ul li {
+    float: left;
+    height: 44px;
+    text-align: center;
+  }
+  nav.main ul li.home,
+  nav.main ul li.catalog,
+  nav.main ul li.learn,
+  nav.main ul li.broker,
+  nav.main ul li.contact {
+    width: 33%;
+  }
+
+  div.cloud {
+    padding: 0;
+  }
+  div.cloud div.cloudImg {
+    display: none;
+  }
+  div.cloud h2 {
+    font-size: 1em;
+  }
+  div.cloud p.hero-p {
+    font-size: 1em;
+    padding-bottom: 0;
+    line-height: 20px;
+  }
+
+  section.catalog-grid img.rocket {
+    width: 20%;
+    margin-top: 2%;
+  }
+  section.catalog-grid img.wizard {
+    width: 25%;
+    margin-top: 5%;
+    margin-bottom: 5%;
+  }
+  section.catalog-grid img.order {
+    width: 35%;
+    margin-top: 5%;
+    margin-bottom: 5%;
+  }
+
+  section.cart-grid div.cart-box-wrapper img {
+    display: none;
+  }
+  section.cart-grid div.cart-box-wrapper h5 {
+    font-size: 1.250em;
+  }
+  section.cart-grid div.cart-box-wrapper h6 {
+    font-size: 0.875em;
+  }
+  section.cart-grid div.cart-box-wrapper p {
+    font-size: 1em;
+  }
+  section.cart-grid div.cart-box-wrapper p.ss-param {
+    font-size: 1em;
+    padding: 0 0 0 10px;
+  }
+  section.cart-grid div.cart-box-wrapper p[attr="no"]:after {
+    position: relative;
+    content: "X";
+    font-weight: bold;
+    color: #b70606;
+    font-size: 1em;
+    top: 1px;
+    text-align: center;
+  }
+  section.cart-grid div.cart-box-wrapper p[attr="yes"]:after {
+    position: relative;
+    content: "OPTIONAL";
+    font-weight: bold;
+    color: #406AAE;
+    font-size: 1em;
+    top: 1px;
+  }
+
+  div.sidebar li {
+    border-bottom: none;
+  }
+
+  section.faq h3 {
+    padding: 0 0 0 20px;
+  }
+  section.faq dl dd a {
+    text-align: left;
+  }
+
+  section.logoFarm div.bg-logoFarm {
+    background-size: 100%;
+    height: 180px;
+    width: 100%;
+  }
+  section.logoFarm div.bg-logoFarm h4 {
+    font-size: 1em;
+    background: #ECEDED;
+    line-height: 35px;
+  }
+
+  section.demo form.demoForm div.demoInputs {
+    padding: 5% 30% 10%;
+  }
+
+  section.wizard p {
+    text-align: center;
+    margin: 5% 0 0;
+  }
+  section.wizard form.wizardForm label {
+    font-weight: normal;
+  }
+  section.wizard form.wizardForm label sup {
+    color: #ff6a6a;
+  }
+  section.wizard form.wizardForm input[type="text"] {
+    border-radius: 5px;
+    height: 50px;
+    margin-bottom: 5%;
+    box-shadow: inset 1px 1px 5px #888888;
+  }
+  section.wizard form.wizardForm input[type="password"] {
+    border-radius: 5px;
+    height: 50px;
+    margin-bottom: 5%;
+    box-shadow: inset 1px 1px 5px #888888;
+  }
+  section.wizard form.wizardForm textarea {
+    min-height: 150px;
+    border-radius: 5px;
+    box-shadow: inset 1px 1px 5px #888888;
+  }
+  section.wizard form.wizardForm select {
+    border-radius: 5px;
+    height: 50px;
+  }
+  section.wizard form.wizardForm button.broker {
+    border-radius: 50px;
+    padding: 15px 40px;
+    text-transform: uppercase;
+    font-size: 1.2em;
+  }
+  section.wizard form.wizardForm small {
+    text-transform: lowercase;
+  }
+  section.wizard form.wizardForm div.question {
+    margin: 3% 0 0;
+  }
+  section.wizard form.wizardForm button.wizardBtn {
+    display: block;
+    margin: 5% auto 10%;
+    border-radius: 50px;
+    padding: 15px 40px;
+    text-transform: uppercase;
+    font-size: 1.2em;
+  }
+  section.wizard div.wizardResult img.wand {
+    width: 80px;
+    right: -12px;
+    top: -25px;
+  }
+
+  section.estimator dl.estTab dd {
+    width: 100%;
+    text-align: center;
+  }
+  section.estimator dl.estTab dd a {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk div.box {
+    width: 280px;
+    padding: 0 20px;
+    margin-right: 0;
+  }
+  section.estimator div.estContentBlk p {
+    width: 70%;
+    padding: 0 2%;
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk input {
+    width: 25%;
+    margin-bottom: 5%;
+  }
+  section.estimator div.estContentBlk span.gold {
+    width: 100%;
+  }
+  section.estimator div.estContentBlk span.silver {
+    background: #888888;
+    width: 100%;
+  }
+  section.estimator div.estContentBlk span.bronze {
+    background: #9a572c;
+    width: 100%;
+  }
+  section.estimator div.estContentBlk input.vms {
+    float: left;
+    width: 25%;
+    margin: 10px 0;
+  }
+  section.estimator div.estContentBlk label.gb-3 {
+    width: 10%;
+  }
+  section.estimator div.estContentBlk label.gb-4 {
+    width: 10%;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="totals"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="vetFacing"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="contDist"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="dataWare"] {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="totals"] {
+    text-align: left;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 tbody tr td {
+    font-size: 0.75em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab3 tbody tr td {
+    font-size: 0.75em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 th[attr="totals"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 th[attr="lineItemChange"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 th[attr="exclEntAdmin"] {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 tbody tr td {
+    font-size: 0.75em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 th[attr="totals"] {
+    width: 100px;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper {
+    height: 350px;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 input[attr="quantity"] {
+    font-size: 0.875em;
+    width: 100%;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 td[attr="ppu"] {
+    text-align: right;
+  }
+}
+@media (min-width: 568px) {
+  section.login {
+    margin: 3% 0 0;
+  }
+  section.login form.loginForm {
+    margin: 3% 0 0;
+  }
+  section.login form.loginForm label {
+    font-weight: normal;
+  }
+  section.login form.loginForm label sup {
+    color: #ff6a6a;
+  }
+  section.login form.loginForm input[type="text"] {
+    border-radius: 5px;
+    height: 50px;
+    margin-bottom: 5%;
+    box-shadow: inset 1px 1px 5px #888888;
+  }
+  section.login form.loginForm input[type="password"] {
+    border-radius: 5px;
+    height: 50px;
+    margin-bottom: 5%;
+    box-shadow: inset 1px 1px 5px #888888;
+  }
+  section.login form.loginForm textarea {
+    min-height: 150px;
+    border-radius: 5px;
+    box-shadow: inset 1px 1px 5px #888888;
+  }
+  section.login form.loginForm select {
+    border-radius: 5px;
+    height: 50px;
+  }
+  section.login form.loginForm button.broker {
+    border-radius: 50px;
+    padding: 15px 40px;
+    text-transform: uppercase;
+    font-size: 1.2em;
+  }
+  section.login form.loginForm small {
+    text-transform: lowercase;
+  }
+  section.login form.loginForm label {
+    font-size: 1.3em;
+  }
+  section.login form.loginForm button.loginBtn {
+    float: none;
+    width: 50%;
+    margin: 2% auto;
+    padding: 0;
+    border-radius: 50px;
+    padding: 15px 40px;
+    text-transform: uppercase;
+    font-size: 1.2em;
+  }
+  section.login p.loginP {
+    font-weight: 100;
+    font-size: 0.875em;
+  }
+  section.login a.loginLink {
+    display: block;
+    margin: 0 auto 3%;
+    text-align: center;
+  }
+  section.login a.loginLink:hover {
+    text-decoration: underline;
+  }
+
+  div.hero-header {
+    height: 440px;
+  }
+
+  div.interior-header {
+    height: 244px;
+  }
+
+  nav.main ul {
+    height: 120px;
+  }
+
+  div.cloud {
+    padding: 0;
+  }
+  div.cloud div.cloudImg {
+    display: block;
+    width: 40%;
+    padding: 80px 0;
+    background-image: url("../img/cloud.png");
+    background-size: 90%;
+    background-position: center center;
+    background-repeat: no-repeat;
+    height: 72px;
+    float: left;
+  }
+  div.cloud h2.hero-h2 {
+    font-size: 1.25em;
+    width: 60%;
+    float: right;
+    text-align: left;
+    padding: 20px 10px 10px 10px;
+    margin: 0;
+  }
+  div.cloud p.hero-p {
+    font-size: 1em;
+    padding: 10px 0 0 10px;
+    margin: 0;
+    line-height: 20px;
+    float: right;
+    text-align: left;
+    width: 60%;
+  }
+
+  a.options3 div.estimate,
+  a.options3 div.learn,
+  a.options3 div.provider {
+    height: auto;
+    padding: 20px 0;
+    border-bottom: 1px solid #e9e9e9;
+  }
+  a.options3 div.estimate h3,
+  a.options3 div.learn h3,
+  a.options3 div.provider h3 {
+    text-align: center;
+  }
+  a.options3 div.estimate p,
+  a.options3 div.learn p,
+  a.options3 div.provider p {
+    text-align: center;
+  }
+  a.options3 div.estimate:hover, a.options3 div.learn:hover, a.options3 div.provider:hover {
+    background-color: #022644;
+  }
+  a.options3 div.estimate:hover h3, a.options3 div.learn:hover h3, a.options3 div.provider:hover h3 {
+    color: white;
+  }
+  a.options3 div.estimate:hover p, a.options3 div.learn:hover p, a.options3 div.provider:hover p {
+    color: white;
+  }
+  a.options3 div.estimate {
+    background: url("../img/estimate.png") right center no-repeat;
+    background-size: 25%;
+  }
+  a.options3 div.learn {
+    background: url("../img/learn.png") right center no-repeat;
+    background-size: 25%;
+  }
+  a.options3 div.provider {
+    background: url("../img/provider.png") right center no-repeat;
+    background-size: 25%;
+  }
+
+  section.catalog-grid img.rocket {
+    width: 20%;
+    margin-top: 2%;
+  }
+  section.catalog-grid img.wizard {
+    width: 25%;
+    margin-top: 5%;
+    margin-bottom: 5%;
+  }
+  section.catalog-grid img.order {
+    width: 35%;
+    margin-top: 5%;
+    margin-bottom: 5%;
+  }
+
+  div.sidebar ol li {
+    border-bottom: 1px solid #e9e9e9;
+    padding: 5px 0;
+  }
+
+  section.confirmation table.confirmTable tbody td[rel="desc"] {
+    font-size: 0.875em;
+  }
+  section.confirmation table.confirmTable tbody button.removeCart {
+    border-radius: 50px;
+    padding: 10px 30px;
+    text-transform: uppercase;
+    font-size: 0.875em;
+  }
+  section.confirmation table.confirmTable tbody button.catalog {
+    border-radius: 50px;
+    padding: 10px 30px;
+    text-transform: uppercase;
+    font-size: 0.875em;
+  }
+  section.confirmation table.confirmTable tbody button.ordrBtn {
+    border-radius: 50px;
+    padding: 15px 40px;
+    text-transform: uppercase;
+    font-size: 1.2em;
+  }
+
+  section.logoFarm div.bg-logoFarm {
+    height: 200px;
+  }
+
+  section.demo form.demoForm div.demoInputs {
+    padding: 5% 33% 10%;
+  }
+
+  section.estimator dl.estTab dd {
+    width: 100%;
+    text-align: center;
+  }
+  section.estimator dl.estTab dd a {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk div.box {
+    width: 280px;
+    padding: 0 20px;
+    margin-right: 0;
+  }
+  section.estimator div.estContentBlk p {
+    width: 70%;
+    padding: 1% 4%;
+    font-size: 1em;
+  }
+  section.estimator div.estContentBlk input {
+    width: 25%;
+    margin-bottom: 5%;
+  }
+  section.estimator div.estContentBlk span.gold {
+    width: 100%;
+  }
+  section.estimator div.estContentBlk span.silver {
+    background: #c0c0c0;
+    width: 100%;
+  }
+  section.estimator div.estContentBlk span.bronze {
+    background: #cd7f32;
+    width: 100%;
+  }
+  section.estimator div.estContentBlk p.cld-item-1and2 {
+    width: 50%;
+    padding: 20px 10px 0 10px;
+    text-align: right;
+  }
+  section.estimator div.estContentBlk p.cld-item-3and4 {
+    width: 60%;
+    padding: 20px 10px 0 10px;
+    text-align: right;
+  }
+  section.estimator div.estContentBlk input.vms {
+    float: left;
+    width: 25%;
+    margin: 10px 0;
+  }
+  section.estimator div.estContentBlk label.gb-3 {
+    width: 10%;
+  }
+  section.estimator div.estContentBlk label.gb-4 {
+    width: 10%;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="totals"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="vetFacing"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="contDist"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="dataWare"] {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="totals"] {
+    text-align: left;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 tbody tr td {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab3 {
+    width: 100%;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab3 th[attr="totals"] {
+    width: 60%;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab3 tbody tr td {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 th[attr="totals"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 th[attr="lineItemChange"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 th[attr="exclEntAdmin"] {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 tbody tr td {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 th[attr="totals"] {
+    width: 100px;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper {
+    height: 350px;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 th[attr="lid"] {
+    width: 25%;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 th[attr="unitType"] {
+    width: 15%;
+    text-align: left;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 th[attr="ppuTh"] {
+    text-align: center;
+    width: 10%;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 th[attr="qtyTh"] {
+    width: 10%;
+    text-align: center;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 input[attr="quantity"] {
+    font-size: 0.875em;
+    width: 100%;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 td[attr="ppu"] {
+    text-align: right;
+  }
+  section.estimator div.estContentBlk table.panel5grandTotal td[attr="p5gTtlTd"] {
+    width: 75%;
+    text-align: right;
+  }
+  section.estimator div.estContentBlk table.panel5grandTotal input[attr="p5gTotal-5"] {
+    width: 100%;
+  }
+  section.estimator div.estContentBlk div.grandTotalRow {
+    width: 100%;
+  }
+  section.estimator div.estContentBlk div.grandTotalRow div[attr="gTotalRow"] input[attr="gTotal"] {
+    width: 40%;
+    font-size: 1.5em;
+    display: block;
+    margin: 0 auto;
+  }
+}
+@media (min-width: 600px) {
+  div.hero-header {
+    height: 395px;
+  }
+
+  div.interior-header {
+    height: 208px;
+  }
+
+  nav.main {
+    height: 200px;
+    background: rgba(15, 117, 188, 0.71);
+  }
+  nav.main ul {
+    height: 70px;
+  }
+  nav.main ul li.home,
+  nav.main ul li.catalog,
+  nav.main ul li.contact {
+    width: 17%;
+  }
+  nav.main ul li.learn {
+    width: 22%;
+  }
+  nav.main ul li.broker {
+    width: 25%;
+  }
+
+  a.options3 div.estimate:hover, a.options3 div.learn:hover, a.options3 div.provider:hover {
+    background-color: #022644;
+  }
+  a.options3 div.estimate:hover h3, a.options3 div.learn:hover h3, a.options3 div.provider:hover h3 {
+    color: white;
+  }
+  a.options3 div.estimate:hover p, a.options3 div.learn:hover p, a.options3 div.provider:hover p {
+    color: white;
+  }
+  a.options3 div.estimate {
+    background: url("../img/estimate.png") right center no-repeat;
+    background-size: 20%;
+  }
+  a.options3 div.learn {
+    background: url("../img/learn.png") right center no-repeat;
+    background-size: 20%;
+  }
+  a.options3 div.provider {
+    background: url("../img/provider.png") right center no-repeat;
+    background-size: 20%;
+  }
+
+  section.catalog-grid img.rocket {
+    width: 20%;
+    margin-top: 2%;
+  }
+  section.catalog-grid img.wizard {
+    width: 25%;
+    margin-top: 5%;
+    margin-bottom: 5%;
+  }
+  section.catalog-grid img.order {
+    width: 35%;
+    margin-top: 5%;
+    margin-bottom: 5%;
+  }
+
+  section.demo form.demoForm div.demoInputs {
+    padding: 5% 32% 10%;
+  }
+
+  section.logoFarm div.bg-logoFarm {
+    height: 220px;
+  }
+
+  section.estimator dl.estTab dd {
+    width: 20%;
+    height: 100%;
+    text-align: center;
+  }
+  section.estimator dl.estTab dd a {
+    font-size: 0.75em;
+  }
+  section.estimator div.estContentBlk div.box {
+    width: 280px;
+    padding: 0 20px;
+    margin-right: 0;
+  }
+  section.estimator div.estContentBlk p {
+    width: 75%;
+    padding: 1% 2% 0 20%;
+    font-size: 1em;
+  }
+  section.estimator div.estContentBlk p.emailNotice {
+    width: 100%;
+    margin-top: 15px;
+    text-align: center;
+    font-size: 0.75em;
+    padding: 1% 3%;
+  }
+  section.estimator div.estContentBlk input {
+    width: 25%;
+    margin-bottom: 5%;
+  }
+  section.estimator div.estContentBlk button[attr="go"] {
+    margin-top: 1%;
+    margin-left: 72%;
+    float: left;
+  }
+  section.estimator div.estContentBlk button[attr="reset"] {
+    margin-bottom: 3%;
+    margin-right: 8%;
+    float: right;
+  }
+  section.estimator div.estContentBlk span.gold {
+    width: 100%;
+  }
+  section.estimator div.estContentBlk span.silver {
+    width: 100%;
+  }
+  section.estimator div.estContentBlk span.bronze {
+    width: 100%;
+  }
+  section.estimator div.estContentBlk p.cld-item-1and2 {
+    width: 50%;
+    padding: 20px 10px 0 10px;
+    text-align: right;
+  }
+  section.estimator div.estContentBlk p.cld-item-3and4 {
+    width: 75%;
+    padding: 20px 10px 0 10px;
+    text-align: right;
+  }
+  section.estimator div.estContentBlk input.estInput {
+    width: 15%;
+    margin-right: 1%;
+  }
+  section.estimator div.estContentBlk input.vms {
+    width: 15%;
+    margin-right: 1;
+  }
+  section.estimator div.estContentBlk label.gb-3 {
+    width: 10%;
+  }
+  section.estimator div.estContentBlk label.gb-4 {
+    width: 10%;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="totals"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="vetFacing"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="contDist"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="dataWare"] {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="totals"] {
+    text-align: left;
+    width: 40%;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 tbody tr td {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab3 {
+    width: 100%;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab3 th[attr="totals"] {
+    width: 60%;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab3 tbody tr td {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 th[attr="totals"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 th[attr="lineItemChange"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 th[attr="exclEntAdmin"] {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 th[attr="totals"] {
+    width: 40%;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 tbody tr td {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper {
+    height: 350px;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 th[attr="lid"] {
+    width: 35%;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 th[attr="unitType"] {
+    width: 15%;
+    text-align: left;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 th[attr="ppuTh"] {
+    text-align: center;
+    width: 15%;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 th[attr="qtyTh"] {
+    width: 15%;
+    text-align: center;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 input[attr="quantity"] {
+    font-size: 1em;
+    width: 100%;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 td[attr="ppu"] {
+    text-align: right;
+  }
+  section.estimator div.estContentBlk table.panel5grandTotal td[attr="p5gTtlTd"] {
+    width: 75%;
+    text-align: right;
+  }
+  section.estimator div.estContentBlk table.panel5grandTotal input[attr="p5gTotal-5"] {
+    width: 100%;
+  }
+}
+@media (min-width: 640px) {
+  section.demo form.demoForm div.demoInputs {
+    padding: 5% 33% 5%;
+  }
+
+  section.estimator dl.estTab dd {
+    width: 20%;
+    height: 100%;
+    text-align: center;
+  }
+  section.estimator dl.estTab dd a {
+    font-size: 0.875em;
+  }
+}
+@media (min-width: 768px) {
+  div.interior-header {
+    height: 262px;
+  }
+
+  section.login {
+    margin: 3% 0 0;
+  }
+  section.login form.loginForm {
+    margin: 3% 0 0;
+  }
+  section.login form.loginForm input[type="text"] {
+    width: 50%;
+    border-radius: 5px;
+    height: 50px;
+    margin-bottom: 5%;
+    box-shadow: inset 1px 1px 5px #888888;
+  }
+  section.login form.loginForm input[type="password"] {
+    width: 50%;
+    border-radius: 5px;
+    height: 50px;
+    margin-bottom: 5%;
+    box-shadow: inset 1px 1px 5px #888888;
+  }
+  section.login form.loginForm label {
+    font-size: 1.3em;
+  }
+  section.login form.loginForm button.loginBtn {
+    float: left;
+    width: 50%;
+    margin: 2% auto;
+    padding: 0;
+    border-radius: 50px;
+    padding: 15px 40px;
+    text-transform: uppercase;
+    font-size: 1.2em;
+  }
+  section.login p.loginP {
+    font-weight: 100;
+    font-size: 0.875em;
+  }
+  section.login a.loginLink {
+    display: block;
+    margin: 0 auto 3%;
+    text-align: center;
+  }
+  section.login a.loginLink:hover {
+    text-decoration: underline;
+  }
+
+  section.register form.registerForm {
+    margin: 3% 0 0;
+  }
+  section.register form.registerForm input[type="text"] {
+    border-radius: 5px;
+    height: 50px;
+    margin-bottom: 5%;
+    box-shadow: inset 1px 1px 5px #888888;
+  }
+  section.register form.registerForm button.registerBtn {
+    display: block;
+    margin: 5% auto 5%;
+    border-radius: 50px;
+    padding: 15px 40px;
+    text-transform: uppercase;
+    font-size: 1.2em;
+  }
+  section.register a.registerLink {
+    display: block;
+    margin: 1% auto 5%;
+    text-align: center;
+  }
+  section.register a.registerLink:hover {
+    text-decoration: underline;
+  }
+
+  div.interior-header {
+    height: 207px;
+  }
+
+  .yellow-hdr {
+    background: #406AAE;
+    height: 50px;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+  }
+  .yellow-hdr div.title {
+    height: 50px;
+  }
+  .yellow-hdr div.title h3 {
+    color: black;
+    font-weight: normal;
+    margin: 0;
+    padding: 0;
+    font-size: 1.25em;
+    position: relative;
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+  }
+
+  section.catalog-grid img.rocket {
+    width: 15%;
+    margin-top: 1%;
+  }
+  section.catalog-grid img.wizard {
+    width: 17%;
+    margin-top: 5%;
+    margin-bottom: 5%;
+  }
+  section.catalog-grid img.order {
+    width: 25%;
+    margin-top: 5%;
+    margin-bottom: 5%;
+  }
+
+  div.search-ltGrey select.orderSelect {
+    display: block;
+    margin: 0 auto;
+    margin-top: 12px;
+    width: 280px;
+  }
+
+  section.cart-grid {
+    width: 100%;
+  }
+  section.cart-grid div.cart-box-wrapper {
+    width: 60%;
+    border-bottom: 1px solid #e9e9e9;
+    border-top: none;
+  }
+  section.cart-grid div.cart-box-wrapper div.cart-box {
+    margin: 20px 0;
+  }
+  section.cart-grid div.cart-box-wrapper img {
+    display: none;
+    margin: 24px 0 0 0;
+  }
+  section.cart-grid div.cart-box-wrapper h5 {
+    font-size: 1.25em;
+    text-align: center;
+  }
+  section.cart-grid div.cart-box-wrapper p {
+    font-size: 1em;
+    text-align: center;
+  }
+  section.cart-grid div.cart-box-wrapper p.ss-param {
+    font-weight: bold;
+    font-size: 1em;
+    padding: 0 0 0 10px;
+  }
+  section.cart-grid div.cart-box-wrapper p[attr="no"]:after {
+    position: relative;
+    content: "X";
+    font-weight: bold;
+    color: #b70606;
+    font-size: 1em;
+    top: 1px;
+    text-align: center;
+  }
+  section.cart-grid div.cart-box-wrapper p[attr="yes"]:after {
+    position: relative;
+    content: "OPTIONAL";
+    font-weight: bold;
+    color: #406AAE;
+    font-size: 1em;
+    top: 1px;
+  }
+
+  div.sidebar {
+    width: 40%;
+    border-bottom: 1px solid #e9e9e9;
+    height: auto;
+  }
+  div.sidebar h5.title {
+    background: #FF8D4A;
+    color: #464646;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 1em;
+    padding: 30px 0;
+    margin: 0;
+    height: 80px;
+    text-align: center;
+  }
+  div.sidebar h5.cost {
+    font-size: 1em;
+    font-weight: normal;
+    color: #464646;
+    text-align: center;
+    border-top: 1px solid #e9e9e9;
+    padding: 20px 0 0 0;
+  }
+  div.sidebar h3 {
+    font-weight: bold;
+    font-size: 1.5em;
+    color: #464646;
+    text-align: center;
+  }
+  div.sidebar ol {
+    padding: 20px 0 0 20px;
+    line-height: 350%;
+  }
+  div.sidebar ol li {
+    font-size: 1em;
+    width: 100%;
+    vertical-align: center;
+    margin: 10px 0;
+    border-bottom: none;
+  }
+  div.sidebar ol li button.remove {
+    height: 44px;
+    width: 44px;
+    font-size: 0.75em;
+  }
+
+  section.logoFarm div.bg-logoFarm {
+    height: 240px;
+  }
+
+  section.prod-detail div.prod-box-wrapper {
+    width: 60%;
+    float: left;
+    border-left: 1px solid #e9e9e9;
+    border-right: 1px solid #e9e9e9;
+    height: auto;
+    padding-bottom: 10%;
+  }
+  section.prod-detail div.prod-box-wrapper img {
+    padding: 30px 0 0 0;
+    display: block;
+    margin: 0 auto;
+  }
+  section.prod-detail div.prod-box-wrapper div.prod-box h3 {
+    text-align: center;
+  }
+  section.prod-detail div.prod-box-wrapper div.prod-box h6 {
+    text-align: center;
+  }
+  section.prod-detail div.prod-box-wrapper div.prod-box p {
+    text-align: center;
+    padding: 0 10%;
+  }
+  section.prod-detail div.prod-box-wrapper div.prod-box p[attr="no"]:after {
+    text-align: center;
+  }
+  section.prod-detail div.prod-box-wrapper div.prod-box p[attr="yes"]:after {
+    text-align: center;
+  }
+  section.prod-detail div.prod-box-wrapper div.prod-box form.prod-detail-inputs select.qty {
+    width: 100%;
+  }
+  section.prod-detail div.prod-box-wrapper div.prod-box form.prod-detail-inputs button.addTo {
+    width: 100%;
+    display: block;
+    margin: 0 auto;
+  }
+
+  section.demo form.demoForm div.demoInputs {
+    padding: 5% 37% 5%;
+  }
+
+  section.estimator dl.estTab dd {
+    width: 20%;
+    height: 100%;
+    text-align: center;
+  }
+  section.estimator dl.estTab dd a {
+    font-size: 0.75em;
+  }
+  section.estimator div.estContentBlk button[attr="go"] {
+    margin-left: 75%;
+    float: left;
+  }
+}
+@media (min-width: 800px) {
+  div.hero-header {
+    height: 395px;
+  }
+
+  div.interior-header {
+    height: 208px;
+  }
+
+  nav.main {
+    background: rgba(15, 117, 188, 0.71);
+  }
+  nav.main ul {
+    height: 70px;
+  }
+  nav.main ul li.home,
+  nav.main ul li.catalog,
+  nav.main ul li.contact {
+    width: 18%;
+  }
+  nav.main ul li.learn,
+  nav.main ul li.broker {
+    width: 22%;
+  }
+
+  div.cloud {
+    height: auto;
+  }
+  div.cloud h2.hero-h2 {
+    width: 55%;
+    font-size: 1.5em;
+    font-weight: bold;
+    text-shadow: 2px 2px black;
+    text-align: center;
+  }
+  div.cloud p.hero-p {
+    width: 55%;
+    font-size: 0.875em;
+    font-weight: 200;
+    text-align: center;
+    color: white;
+    line-height: 155%;
+  }
+
+  section.catalog-grid div.demoBlk, section.catalog-grid div.wizBlk, section.catalog-grid div.orderBlk {
+    width: 33.333333%;
+    height: 325px;
+  }
+  section.catalog-grid div.demoBlk h6, section.catalog-grid div.wizBlk h6, section.catalog-grid div.orderBlk h6 {
+    font-size: 0.75em;
+  }
+  section.catalog-grid div.demoBlk img.rocket, section.catalog-grid div.wizBlk img.rocket, section.catalog-grid div.orderBlk img.rocket {
+    width: 30%;
+    margin-top: 15%;
+    margin-bottom: 4%;
+  }
+  section.catalog-grid div.demoBlk img.wizard, section.catalog-grid div.wizBlk img.wizard, section.catalog-grid div.orderBlk img.wizard {
+    width: 40%;
+    margin-top: 10%;
+    margin-bottom: 11%;
+  }
+  section.catalog-grid div.demoBlk img.order, section.catalog-grid div.wizBlk img.order, section.catalog-grid div.orderBlk img.order {
+    width: 60%;
+    margin-top: 12%;
+    margin-bottom: 12%;
+  }
+
+  section.logoFarm div.bg-logoFarm {
+    height: 260px;
+  }
+
+  section.demo form.demoForm div.demoInputs {
+    padding: 5% 38% 5%;
+  }
+
+  section.estimator dl.estTab dd {
+    width: 20%;
+    text-align: center;
+  }
+  section.estimator dl.estTab dd a {
+    font-size: 0.75em;
+  }
+  section.estimator div.estContentBlk div.box {
+    width: 280px;
+    padding: 0 20px;
+    margin-right: 0;
+  }
+  section.estimator div.estContentBlk p {
+    width: 75%;
+    padding: 1% 2% 0 20%;
+    font-size: 1em;
+  }
+  section.estimator div.estContentBlk p.emailNotice {
+    width: 100%;
+    margin-top: 15px;
+    text-align: center;
+    font-size: 0.75em;
+    padding: 1% 3%;
+  }
+  section.estimator div.estContentBlk input {
+    width: 25%;
+    margin-bottom: 5%;
+  }
+  section.estimator div.estContentBlk button[attr="go"] {
+    margin-top: 1%;
+    margin-left: 75%;
+    float: left;
+  }
+  section.estimator div.estContentBlk button[attr="reset"] {
+    margin-bottom: 3%;
+    margin-right: 8%;
+    float: right;
+  }
+  section.estimator div.estContentBlk span.gold {
+    width: 100%;
+  }
+  section.estimator div.estContentBlk span.silver {
+    width: 100%;
+  }
+  section.estimator div.estContentBlk span.bronze {
+    width: 100%;
+  }
+  section.estimator div.estContentBlk p.cld-item-1and2 {
+    width: 50%;
+    padding: 20px 10px 0 10px;
+    text-align: right;
+  }
+  section.estimator div.estContentBlk p.cld-item-3and4 {
+    width: 75%;
+    padding: 20px 10px 0 10px;
+    text-align: right;
+  }
+  section.estimator div.estContentBlk input.estInput {
+    width: 15%;
+    margin-right: 1%;
+  }
+  section.estimator div.estContentBlk input.vms {
+    width: 15%;
+    margin-right: 1;
+  }
+  section.estimator div.estContentBlk label.gb-3 {
+    width: 10%;
+  }
+  section.estimator div.estContentBlk label.gb-4 {
+    width: 10%;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="totals"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="vetFacing"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="contDist"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="dataWare"] {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="totals"] {
+    text-align: left;
+    width: 40%;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 tbody tr td {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab3 {
+    width: 100%;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab3 th[attr="totals"] {
+    width: 60%;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab3 tbody tr td {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 th[attr="totals"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 th[attr="lineItemChange"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 th[attr="exclEntAdmin"] {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 th[attr="totals"] {
+    width: 40%;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 tbody tr td {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper {
+    height: 350px;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 th[attr="lid"] {
+    width: 35%;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 th[attr="unitType"] {
+    width: 15%;
+    text-align: left;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 th[attr="ppuTh"] {
+    text-align: center;
+    width: 15%;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 th[attr="qtyTh"] {
+    width: 15%;
+    text-align: center;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 input[attr="quantity"] {
+    font-size: 1em;
+    width: 100%;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 td[attr="ppu"] {
+    text-align: right;
+  }
+  section.estimator div.estContentBlk table.panel5grandTotal td[attr="p5gTtlTd"] {
+    width: 75%;
+    text-align: right;
+  }
+  section.estimator div.estContentBlk table.panel5grandTotal input[attr="p5gTotal-5"] {
+    width: 100%;
+  }
+  section.estimator div.estContentBlk div.grandTotalRow {
+    display: none;
+  }
+  section.estimator div.estContentBlk div.grandTotalRowWide {
+    width: 100%;
+  }
+  section.estimator div.estContentBlk div.grandTotalRowWide p.gtHdr {
+    font-size: 1em;
+    width: 100%;
+    font-weight: bold;
+    text-align: center;
+    padding: 0;
+  }
+  section.estimator div.estContentBlk div.grandTotalRowWide label {
+    float: left;
+    font-weight: bold;
+    text-align: center;
+    width: 45%;
+    margin: 0;
+    padding: 10px 0;
+  }
+  section.estimator div.estContentBlk div.grandTotalRowWide div[attr="gTotalRow"] {
+    background: #FF8D4A;
+    width: 33.333333%;
+    float: left;
+    margin-bottom: 20px;
+    padding: 10px 0;
+  }
+  section.estimator div.estContentBlk div.grandTotalRowWide div[attr="gTotalRow"] input[attr="p5gTotal"] {
+    width: 100%;
+  }
+  section.estimator div.estContentBlk div.grandTotalRowWide div[attr="gTotalRow"] input[attr="gTotal"] {
+    width: 48%;
+    font-size: 1.125em;
+    display: block;
+    margin: 0 auto;
+  }
+}
+@media (min-width: 960px) {
+  div.interior-header {
+    height: 220px;
+  }
+
+  div.hero-header {
+    height: 435px;
+  }
+
+  div.cloud img {
+    width: 350px;
+    display: block;
+    margin: 0 auto;
+  }
+  div.cloud h2.hero-h2 {
+    float: left;
+    width: 500px;
+    font-size: 2em;
+    font-weight: bold;
+    text-shadow: 2px 2px black;
+    text-align: center;
+  }
+  div.cloud p.hero-p {
+    float: left;
+    width: 500px;
+    font-size: 0.875em;
+    font-weight: 200;
+    text-align: center;
+    color: white;
+    line-height: 155%;
+  }
+
+  a.options3 div.estimate,
+  a.options3 div.learn,
+  a.options3 div.provider {
+    width: 33.333333%;
+    height: 390px;
+    padding: 20px 0;
+    border-bottom: 1px solid #e9e9e9;
+  }
+  a.options3 div.estimate h3,
+  a.options3 div.learn h3,
+  a.options3 div.provider h3 {
+    text-align: center;
+  }
+  a.options3 div.estimate p,
+  a.options3 div.learn p,
+  a.options3 div.provider p {
+    text-align: center;
+  }
+  a.options3 div.estimate:hover, a.options3 div.learn:hover, a.options3 div.provider:hover {
+    background-color: #022644;
+  }
+  a.options3 div.estimate:hover h3, a.options3 div.learn:hover h3, a.options3 div.provider:hover h3 {
+    color: white;
+  }
+  a.options3 div.estimate:hover p, a.options3 div.learn:hover p, a.options3 div.provider:hover p {
+    color: white;
+  }
+  a.options3 div.estimate {
+    background: url("../img/estimate.png") right center no-repeat;
+    background-size: 45%;
+  }
+  a.options3 div.learn {
+    background: url("../img/learn.png") right center no-repeat;
+    background-size: 55%;
+  }
+  a.options3 div.provider {
+    background: url("../img/provider.png") right center no-repeat;
+    background-size: 55%;
+  }
+
+  section.catalog-grid div.demoBlk, section.catalog-grid div.wizBlk, section.catalog-grid div.orderBlk {
+    width: 33.333333%;
+    height: 375px;
+  }
+  section.catalog-grid div.demoBlk h6, section.catalog-grid div.wizBlk h6, section.catalog-grid div.orderBlk h6 {
+    font-size: 0.875em;
+  }
+  section.catalog-grid div.demoBlk img.rocket, section.catalog-grid div.wizBlk img.rocket, section.catalog-grid div.orderBlk img.rocket {
+    width: 30%;
+    margin-top: 17%;
+    margin-bottom: 4%;
+  }
+  section.catalog-grid div.demoBlk img.wizard, section.catalog-grid div.wizBlk img.wizard, section.catalog-grid div.orderBlk img.wizard {
+    width: 40%;
+    margin-top: 10%;
+    margin-bottom: 11%;
+  }
+  section.catalog-grid div.demoBlk img.order, section.catalog-grid div.wizBlk img.order, section.catalog-grid div.orderBlk img.order {
+    width: 60%;
+    margin-top: 12%;
+    margin-bottom: 12%;
+  }
+
+  section.cart-grid div.cart-box-wrapper img {
+    padding-top: 2%;
+    display: block;
+    margin: 0 auto;
+  }
+  section.cart-grid div.cart-box-wrapper h5 {
+    color: #464646;
+    font-weight: bold;
+    font-size: 1.5em;
+    text-align: center;
+  }
+  section.cart-grid div.cart-box-wrapper h6 {
+    font-size: 0.875em;
+    color: #464646;
+    text-align: center;
+  }
+  section.cart-grid div.cart-box-wrapper p {
+    font-size: 1em;
+    color: #464646;
+    font-weight: normal;
+    text-align: center;
+    padding-bottom: 2%;
+  }
+  section.cart-grid div.cart-box-wrapper p.ss-param {
+    font-weight: bold;
+    font-size: 1em;
+    padding: 0 0 0 10px;
+  }
+  section.cart-grid div.cart-box-wrapper p[attr="no"]:after {
+    position: relative;
+    content: "X";
+    font-weight: bold;
+    color: #b70606;
+    font-size: 1em;
+    top: 1px;
+    text-align: center;
+  }
+  section.cart-grid div.cart-box-wrapper p[attr="yes"]:after {
+    position: relative;
+    content: "OPTIONAL";
+    font-weight: bold;
+    color: #406AAE;
+    font-size: 1em;
+    top: 1px;
+  }
+
+  section.prod-detail div.prod-box-wrapper div.prod-box p.prod-box-p {
+    font-size: 1em;
+  }
+  section.prod-detail div.prod-box-wrapper div.prod-box p[attr="no"]:after {
+    text-align: center;
+  }
+  section.prod-detail div.prod-box-wrapper div.prod-box p[attr="yes"]:after {
+    text-align: center;
+  }
+  section.prod-detail div.prod-box-wrapper div.prod-box form.prod-detail-inputs select.qty {
+    width: 100%;
+  }
+  section.prod-detail div.prod-box-wrapper div.prod-box form.prod-detail-inputs button.addTo {
+    float: none;
+    width: 50%;
+    margin-top: 5%;
+    display: block;
+    margin: 0 auto;
+  }
+
+  div.sidebar ol {
+    padding: 20px 0 0 20px;
+    line-height: 180%;
+  }
+  div.sidebar ol li {
+    font-size: 1em;
+    width: 100%;
+    margin: 10px 0;
+  }
+  div.sidebar ol li button.remove {
+    height: 20px;
+    width: 20px;
+    font-size: 0.5em;
+  }
+
+  section.confirmation table.confirmTable tbody button.removeCart {
+    border-radius: 50px;
+    padding: 10px 30px;
+    text-transform: uppercase;
+    font-size: 0.875em;
+  }
+  section.confirmation table.confirmTable tbody button.catalog {
+    border-radius: 50px;
+    padding: 10px 30px;
+    text-transform: uppercase;
+    font-size: 0.875em;
+  }
+  section.confirmation table.confirmTable tbody button.ordrBtn {
+    border-radius: 50px;
+    padding: 15px 40px;
+    text-transform: uppercase;
+    font-size: 1.2em;
+  }
+
+  section.demo form.demoForm div.demoInputs {
+    padding: 5% 40% 5%;
+  }
+
+  .pale-blue-cta {
+    background: #f2fbff;
+    height: 100%;
+    margin: 2% 0;
+    padding: 0;
+    border: none;
+  }
+  .pale-blue-cta p {
+    font-size: 1.2em;
+    font-weight: 100;
+    padding: 3% 0 0;
+    text-align: center;
+  }
+  .pale-blue-cta p span {
+    font-weight: normal;
+  }
+  .pale-blue-cta a {
+    color: #188ad2;
+  }
+  .pale-blue-cta a:hover {
+    text-decoration: underline;
+  }
+  .pale-blue-cta button {
+    display: block;
+    width: auto;
+    margin: 0 auto;
+    font-weight: 300;
+    margin-top: 5%;
+    margin-bottom: 5%;
+    color: #464646;
+    background: #fbecb8;
+    border-radius: 50px;
+    padding: 15px 40px;
+    text-transform: uppercase;
+    font-size: 1.2em;
+    transition: .25s ease-in-out;
+  }
+  .pale-blue-cta button:hover {
+    background: #406AAE;
+    transition: .25s ease-in-out;
+  }
+
+  section.logoFarm div.bg-logoFarm {
+    height: 300px;
+  }
+
+  section.wizard div.wizardResult img.wand {
+    width: 100px;
+    right: -12px;
+    top: -45px;
+  }
+
+  section.estimator dl.estTab dd {
+    width: 20%;
+    text-align: center;
+  }
+  section.estimator dl.estTab dd a {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk div.box {
+    width: 280px;
+    padding: 0 20px;
+    margin-right: 0;
+  }
+  section.estimator div.estContentBlk p {
+    width: 33%;
+    padding: 2% 2% 0 5%;
+    font-size: 0.875em;
+    float: left;
+  }
+  section.estimator div.estContentBlk p.emailNotice {
+    width: 100%;
+    margin-top: 15px;
+    text-align: center;
+    font-size: 0.75em;
+    padding: 1% 3%;
+  }
+  section.estimator div.estContentBlk input {
+    width: 25%;
+    margin-bottom: 5%;
+  }
+  section.estimator div.estContentBlk button[attr="go"] {
+    width: 250px;
+    float: none;
+    display: block;
+    margin: 0 auto;
+  }
+  section.estimator div.estContentBlk button[attr="reset"] {
+    float: none;
+    display: block;
+    margin: 0 auto;
+  }
+  section.estimator div.estContentBlk span.gold {
+    width: 25%;
+  }
+  section.estimator div.estContentBlk span.silver {
+    width: 25%;
+  }
+  section.estimator div.estContentBlk span.bronze {
+    width: 25%;
+  }
+  section.estimator div.estContentBlk p.cld-item-1and2 {
+    width: 50%;
+    padding: 20px 10px 0 10px;
+    text-align: right;
+  }
+  section.estimator div.estContentBlk p.cld-item-3and4 {
+    width: 19%;
+    padding: 22px 10px 0 10px;
+    text-align: right;
+  }
+  section.estimator div.estContentBlk p.cld-item4 {
+    width: 35%;
+    padding: 18px 10px 0 10px;
+    text-align: right;
+  }
+  section.estimator div.estContentBlk p.cld-item4b {
+    width: 31%;
+    padding: 18px 10px 0 10px;
+    text-align: right;
+  }
+  section.estimator div.estContentBlk p.p-itemNth2 {
+    padding-left: 18px;
+  }
+  section.estimator div.estContentBlk input.estInput {
+    width: 15%;
+    margin-right: 1%;
+    margin-top: 2%;
+    float: left;
+  }
+  section.estimator div.estContentBlk input.vms {
+    width: 10%;
+    margin-right: 1;
+    margin-bottom: 4%;
+    margin-top: 2%;
+  }
+  section.estimator div.estContentBlk label.gb-3 {
+    width: 4%;
+    padding-left: 10px;
+    padding-top: 2%;
+  }
+  section.estimator div.estContentBlk label.gb-4 {
+    width: 4%;
+    padding-top: 2%;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="totals"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="vetFacing"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="contDist"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="dataWare"] {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 thead tr th[attr="totals"] {
+    text-align: left;
+    width: 40%;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab1and2 tbody tr td {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab3 {
+    width: 100%;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab3 th[attr="totals"] {
+    width: 60%;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab3 tbody tr td {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 th[attr="totals"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 th[attr="lineItemChange"],
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 th[attr="exclEntAdmin"] {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 th[attr="totals"] {
+    width: 40%;
+  }
+  section.estimator div.estContentBlk table.estGlobalTable-tab4 tbody tr td {
+    font-size: 0.875em;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper {
+    height: 500px;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 th[attr="lid"] {
+    width: 35%;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 th[attr="unitType"] {
+    width: 15%;
+    text-align: left;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 th[attr="ppuTh"] {
+    text-align: center;
+    width: 15%;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 th[attr="qtyTh"] {
+    width: 15%;
+    text-align: center;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 input[attr="quantity"] {
+    font-size: 1em;
+    width: 100%;
+  }
+  section.estimator div.estContentBlk div.table-tab5Wrapper table.estGlobalTable-tab5 td[attr="ppu"] {
+    text-align: right;
+  }
+  table tbody tr td.item-total {
+    text-align: right;
+  }
+  section.estimator div.estContentBlk table.panel5grandTotal td[attr="p5gTtlTd"] {
+    width: 18%;
+    text-align: right;
+  }
+  section.estimator div.estContentBlk table.panel5grandTotal td[attr="p5buttons"] {
+    width: 60%;
+    text-align: right;
+  }
+  section.estimator div.estContentBlk table.panel5grandTotal td[attr="gTotal"] {
+    background: #406AAE;
+  }
+  section.estimator div.estContentBlk table.panel5grandTotal input[attr="p5gTotal-5"] {
+    width: 100%;
+  }
+  section.estimator div.estContentBlk div.grandTotalRow {
+    display: none;
+  }
+  section.estimator div.estContentBlk div.grandTotalRowWide {
+    width: 100%;
+  }
+  section.estimator div.estContentBlk div.grandTotalRowWide p.gtHdr {
+    font-size: 1em;
+    width: 100%;
+    font-weight: bold;
+    text-align: center;
+    padding: 1% 0;
+  }
+  section.estimator div.estContentBlk div.grandTotalRowWide label {
+    float: left;
+    font-weight: bold;
+    text-align: center;
+    width: 45%;
+    margin: 0;
+    padding: 10px 0;
+  }
+  section.estimator div.estContentBlk div.grandTotalRowWide div[attr="gTotalRow"] {
+    background: #FF8D4A;
+    width: 33.333333%;
+    float: left;
+    margin-bottom: 20px;
+    padding: 10px 0;
+  }
+  section.estimator div.estContentBlk div.grandTotalRowWide div[attr="gTotalRow"] input[attr="p5gTotal"] {
+    width: 100%;
+  }
+  section.estimator div.estContentBlk div.grandTotalRowWide div[attr="gTotalRow"] input[attr="gTotal"] {
+    width: 48%;
+    font-size: 1.125em;
+    display: block;
+    margin: 0 auto;
+  }
+  section.estimator div.estContentBlk p.emailP {
+    width: 75%;
+    font-size: 0.875em;
+    text-align: left;
+    padding: 2% 5%;
+    float: left;
+  }
+  section.estimator div.estContentBlk button.email {
+    width: 15%;
+    float: right;
+    color: white;
+    margin-top: 20px;
+    margin-right: 10%;
+    background: #406AAE;
+    transition: .25s ease-in-out;
+    border-radius: 50px;
+    padding: 10px 30px;
+    text-transform: uppercase;
+    font-size: 0.875em;
+  }
+}
+@media (min-width: 1024px) {
+  div.hero-header {
+    height: 500px;
+  }
+  div.hero-header nav.utility {
+    width: 100%;
+    height: 40px;
+    margin: 0 0 30px 0;
+    padding: 0;
+  }
+  div.hero-header nav.utility ul {
+    width: 15%;
+    float: right;
+    height: 40px;
+  }
+  div.hero-header nav.utility ul li {
+    list-style-type: none;
+    display: inline-block;
+    margin: 0;
+    padding: 0;
+    float: right;
+  }
+  div.hero-header nav.utility ul li a.register {
+    color: white;
+    font-size: 0.75em;
+    font-weight: 100;
+    padding: 10px;
+    margin: 0;
+    background-color: #5f9ece;
+    transition: .5s ease-in-out;
+    text-transform: uppercase;
+  }
+  div.hero-header nav.utility ul li a.login {
+    color: #06183f;
+    font-size: 0.75em;
+    font-weight: 100;
+    padding-left: 30px;
+    padding-top: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    -webkit-border-bottom-left-radius: 50px;
+    -moz-border-radius-bottomleft: 50px;
+    border-bottom-left-radius: 50px;
+    margin: 0;
+    background-color: #fbecb8;
+    transition: .5s ease-in-out;
+    text-transform: uppercase;
+  }
+  div.hero-header nav.utility ul li a.register:hover {
+    background-color: #022644;
+    transition: .25s ease-in-out;
+  }
+  div.hero-header nav.utility ul li a.login:hover {
+    background-color: #406AAE;
+    transition: .25s ease-in-out;
+  }
+
+  nav.main {
+    clear: both;
+    background: none;
+    height: 100px;
+  }
+  nav.main div.logo {
+    background-image: url("../img/boozallen.gif");
+    background-position: center center;
+    background-repeat: no-repeat;
+    height: 82px;
+    width: 309px;
+    float: left;
+    margin-left: 2%;
+  }
+  nav.main ul {
+    width: 65%;
+    height: 70px;
+    float: right;
+  }
+  nav.main ul li {
+    position: relative;
+    list-style-type: none;
+    display: inline-block;
+    height: 43px;
+    top: 30px;
+  }
+  nav.main ul li a {
+    color: white;
+    padding: 8px 20px;
+    height: 43px;
+    font-weight: 100;
+  }
+  nav.main ul li a:hover {
+    background: none;
+    border: 4px solid #406AAE;
+    border-radius: 50px;
+    padding: 8px 20px;
+    margin: 0 -4px;
+    color: white;
+  }
+  nav.main ul li.home,
+  nav.main ul li.catalog,
+  nav.main ul li.contact {
+    width: 15%;
+    text-align: center;
+  }
+  nav.main ul li.learn,
+  nav.main ul li.broker {
+    width: 25%;
+    text-align: center;
+  }
+
+  div.interior-header {
+    height: 300px;
+  }
+  div.interior-header nav.utility {
+    width: 100%;
+    height: 40px;
+    margin: 0 0 30px 0;
+    padding: 0;
+  }
+  div.interior-header nav.utility ul {
+    float: right;
+    height: 40px;
+    width: 50%;
+  }
+  div.interior-header nav.utility ul li {
+    list-style-type: none;
+    display: inline-block;
+    margin: 0;
+    padding: 0;
+    float: right;
+  }
+  div.interior-header nav.utility ul li a.register,
+  div.interior-header nav.utility ul li.leaf a {
+    color: white;
+    font-size: 0.75em;
+    font-weight: 100;
+    padding: 10px;
+    margin: 0;
+    background-color: #406AAE;
+    transition: .5s ease-in-out;
+    text-transform: uppercase;
+  }
+  div.interior-header nav.utility ul li a.login {
+    color: #06183f;
+    font-size: 0.75em;
+    font-weight: 100;
+    padding-left: 40px;
+    padding-top: 12px;
+    padding-right: 20px;
+    padding-bottom: 10px;
+    -webkit-border-bottom-left-radius: 50px;
+    -moz-border-radius-bottomleft: 50px;
+    border-bottom-left-radius: 50px;
+    margin: 0;
+    background-color: #8B8989;
+    transition: .5s ease-in-out;
+    text-transform: uppercase;
+  }
+  div.interior-header nav.utility ul li a.register:hover,
+  div.interior-header nav.utility ul li.leaf a:hover {
+    background-color: #022644;
+    transition: .25s ease-in-out;
+  }
+  div.interior-header nav.utility ul li a.login:hover {
+    background-color: #316AC9;
+    transition: .25s ease-in-out;
+  }
+
+  section.thanks div.thanksWrapper {
+    border-radius: 10px;
+  }
+
+  div.cloud {
+    height: 290px;
+    width: 100%;
+  }
+  div.cloud div.cloudImg {
+    width: 40%;
+    padding: 72px 0;
+    background-size: 70%;
+    float: none;
+    display: block;
+    margin: 0 auto;
+  }
+  div.cloud h2.hero-h2 {
+    width: 100%;
+    font-size: 2em;
+    font-weight: bold;
+    text-shadow: 2px 2px black;
+    text-align: center;
+    padding: 0 20%;
+  }
+  div.cloud p.hero-p {
+    width: 100%;
+    padding: 0 30%;
+    font-size: 0.875em;
+    font-weight: 200;
+    text-align: center;
+    color: white;
+    line-height: 155%;
+    float: left;
+  }
+
+  .yellow-hdr {
+    background: #406AAE;
+    height: 100px;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+  }
+  .yellow-hdr div.title {
+    height: 100px;
+  }
+  .yellow-hdr div.title h3 {
+    color: black;
+    font-weight: normal;
+    margin: 0;
+    padding: 0;
+    font-size: 1.375em;
+    position: relative;
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+  }
+
+  a.options3 div.estimate,
+  a.options3 div.learn,
+  a.options3 div.provider {
+    width: 33.333333%;
+    height: 390px;
+    padding: 20px 0;
+    border-bottom: 1px solid #e9e9e9;
+  }
+  a.options3 div.estimate h3,
+  a.options3 div.learn h3,
+  a.options3 div.provider h3 {
+    text-align: center;
+  }
+  a.options3 div.estimate p,
+  a.options3 div.learn p,
+  a.options3 div.provider p {
+    text-align: center;
+  }
+  a.options3 div.estimate:hover, a.options3 div.learn:hover, a.options3 div.provider:hover {
+    background-color: #022644;
+  }
+  a.options3 div.estimate:hover h3, a.options3 div.learn:hover h3, a.options3 div.provider:hover h3 {
+    color: white;
+  }
+  a.options3 div.estimate:hover p, a.options3 div.learn:hover p, a.options3 div.provider:hover p {
+    color: white;
+  }
+  a.options3 div.estimate {
+    background: url("../img/estimate.png") right center no-repeat;
+    background-size: 40%;
+  }
+  a.options3 div.learn {
+    background: url("../img/learn.png") right center no-repeat;
+    background-size: 50%;
+  }
+  a.options3 div.provider {
+    background: url("../img/provider.png") right center no-repeat;
+    background-size: 50%;
+  }
+
+  section.cart-grid div.cart-box-wrapper {
+    border: 1px solid #e9e9e9;
+    border-top: none;
+  }
+  section.cart-grid div.cart-box-wrapper div.cart-box {
+    margin: 20px 0;
+  }
+  section.cart-grid div.cart-box-wrapper img {
+    vertical-align: top;
+    margin: 24px 0 0 0;
+    display: block;
+    margin: 0 auto;
+  }
+  section.cart-grid div.cart-box-wrapper h5 {
+    color: #464646;
+    font-weight: bold;
+    font-size: 0.875em;
+  }
+  section.cart-grid div.cart-box-wrapper h6 {
+    font-size: 0.875em;
+    color: #464646;
+  }
+  section.cart-grid div.cart-box-wrapper p {
+    font-size: 0.875em;
+    color: #464646;
+    font-weight: normal;
+  }
+  section.cart-grid div.cart-box-wrapper p.ss-param {
+    font-weight: bold;
+    font-size: 1em;
+    padding: 0 0 0 10px;
+  }
+  section.cart-grid div.cart-box-wrapper p[attr="no"]:after {
+    position: relative;
+    content: "X";
+    font-weight: bold;
+    color: #b70606;
+    font-size: 1em;
+    top: 1px;
+  }
+  section.cart-grid div.cart-box-wrapper p[attr="yes"]:after {
+    position: relative;
+    content: "OPTIONAL";
+    font-weight: bold;
+    color: #406AAE;
+    font-size: 1em;
+    top: 1px;
+  }
+  section.cart-grid div.cart-box-wrapper button {
+    border-radius: 50px;
+    color: #464646;
+    background: #FF9D6C;
+    padding: 10px 30px;
+    text-transform: uppercase;
+    font-size: 0.875em;
+    font-weight: 300;
+  }
+  section.cart-grid div.cart-box-wrapper button:hover {
+    background: #FF8D4A;
+    transition: .25s ease-in-out;
+  }
+  section.cart-grid div.cart-box-wrapper:hover {
+    background: #ECEDED;
+  }
+  section.cart-grid div.cart-box-wrapper-rmv-lftDvdr {
+    border-left: none;
+  }
+
+  div.sidebar {
+    border-right: 1px solid #e9e9e9;
+    border-bottom: 1px solid #e9e9e9;
+    height: auto;
+  }
+  div.sidebar h5.title {
+    background: #FF8D4A;
+    color: #464646;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 1em;
+    padding: 30px 0;
+    margin: 0;
+    height: 80px;
+    text-align: center;
+  }
+  div.sidebar h5.cost {
+    font-size: 1em;
+    font-weight: normal;
+    color: #464646;
+    text-align: center;
+    border-top: 1px solid #e9e9e9;
+    padding: 20px 0 0 0;
+  }
+  div.sidebar h3 {
+    font-weight: bold;
+    font-size: 1.5em;
+    color: #464646;
+    text-align: center;
+  }
+  div.sidebar ol {
+    padding: 20px 0 0 20px;
+    line-height: 180%;
+  }
+  div.sidebar ol li {
+    font-size: 1em;
+    width: 100%;
+  }
+  div.sidebar ol li button.remove {
+    cursor: hand;
+    border-radius: 50%;
+    height: 20px;
+    width: 20px;
+    background: #b70606;
+    opacity: 0.75;
+    color: white;
+    vertical-align: middle;
+    padding: 0;
+    margin: 0 20px 0 0;
+    font-size: 0.5em;
+    position: relative;
+    top: 3px;
+  }
+  div.sidebar ol li button.remove:hover {
+    background: #b70606;
+    opacity: 1;
+    transition: .25s ease-in-out;
+  }
+  div.sidebar button.checkout {
+    background: #fbecb8;
+    border-radius: 50px;
+    padding: 10px 40px;
+    margin: 0 auto 20px;
+    color: #464646;
+    text-align: center;
+    text-transform: uppercase;
+    font-weight: bold;
+    display: block;
+  }
+  div.sidebar button.checkout:hover {
+    background: #406AAE;
+    transition: .25s ease-in-out;
+    opacity: 1;
+  }
+
+  section.broker {
+    width: 100%;
+  }
+  section.broker form.broker {
+    width: 50%;
+    margin: 5% 0 0 0;
+  }
+  section.broker form.broker label {
+    font-weight: normal;
+  }
+  section.broker form.broker label sup {
+    color: #ff6a6a;
+  }
+  section.broker form.broker input[type="text"] {
+    border-radius: 5px;
+    height: 50px;
+    width: 100%;
+    margin-bottom: 5%;
+  }
+  section.broker form.broker textarea {
+    width: 100%;
+    min-height: 150px;
+    border-radius: 5px;
+  }
+  section.broker form.broker select {
+    border-radius: 5px;
+    height: 50px;
+    width: 100%;
+  }
+  section.broker form.broker button.broker {
+    border-radius: 50px;
+    padding: 15px 40px;
+    text-transform: uppercase;
+    font-size: 1.2em;
+  }
+  section.broker form.broker small {
+    text-transform: lowercase;
+  }
+
+  section.wizard div.wizardResult img.wand {
+    width: 130px;
+    right: -12px;
+    top: -75px;
+  }
+
+  section.demo form.demoForm div.demoInputs {
+    padding: 5% 39% 5%;
+  }
+}
+@media (min-width: 1200px) {
+  section.login form.loginForm input[type="text"] {
+    width: 100%;
+  }
+  section.login form.loginForm input[type="password"] {
+    width: 100%;
+  }
+  section.login form.loginForm button.loginBtn {
+    width: 100%;
+    margin-bottom: 7%;
+  }
+  section.login form.loginForm a.loginLink {
+    margin: 1% auto 3%;
+    text-align: center;
+  }
+
+  div.hero-header {
+    height: 500px;
+  }
+
+  nav.main {
+    height: 130px;
+  }
+  nav.main ul {
+    width: 60%;
+    height: 70px;
+    float: right;
+  }
+  nav.main ul li.home {
+    width: 10%;
+  }
+  nav.main ul li.catalog,
+  nav.main ul li.contact,
+  nav.main ul li.learn,
+  nav.main ul li.broker {
+    width: 20%;
+    text-align: center;
+    font-size: 1em;
+  }
+
+  div.cloud {
+    height: 290px;
+    width: 100%;
+  }
+  div.cloud h2.hero-h2 {
+    width: 100%;
+    font-size: 2em;
+    font-weight: bold;
+    text-shadow: 2px 2px black;
+    text-align: center;
+    padding: 0;
+  }
+  div.cloud p.hero-p {
+    width: 100%;
+    padding: 0 20%;
+    font-size: 1.25em;
+    font-weight: 200;
+    text-align: center;
+    color: white;
+    line-height: 155%;
+    float: left;
+  }
+
+  a.yellow-bg-link {
+    font-size: 1.5em;
+    padding: 40px 0;
+  }
+
+  a.options3 div.estimate,
+  a.options3 div.learn,
+  a.options3 div.provider {
+    width: 33.333333%;
+    height: 390px;
+    padding: 20px 0;
+    border-bottom: 1px solid #e9e9e9;
+  }
+  a.options3 div.estimate h3,
+  a.options3 div.learn h3,
+  a.options3 div.provider h3 {
+    text-align: left;
+    padding: 10% 0 0 20%;
+  }
+  a.options3 div.estimate p,
+  a.options3 div.learn p,
+  a.options3 div.provider p {
+    text-align: left;
+    padding: 0 0 0 20%;
+  }
+  a.options3 div.estimate:hover, a.options3 div.learn:hover, a.options3 div.provider:hover {
+    background-color: #022644;
+  }
+  a.options3 div.estimate:hover h3, a.options3 div.learn:hover h3, a.options3 div.provider:hover h3 {
+    color: white;
+  }
+  a.options3 div.estimate:hover p, a.options3 div.learn:hover p, a.options3 div.provider:hover p {
+    color: white;
+  }
+  a.options3 div.estimate {
+    background: url("../img/estimate.png") right center no-repeat;
+    background-size: 35%;
+  }
+  a.options3 div.learn {
+    background: url("../img/learn.png") right center no-repeat;
+    background-size: 45%;
+  }
+  a.options3 div.provider {
+    background: url("../img/provider.png") right center no-repeat;
+    background-size: 45%;
+  }
+
+  section.cart-grid div.cart-box-wrapper {
+    border: 1px solid #e9e9e9;
+    border-top: none;
+  }
+  section.cart-grid div.cart-box-wrapper div.cart-box {
+    margin: 20px 0;
+  }
+  section.cart-grid div.cart-box-wrapper img {
+    padding-top: 25%;
+    display: block;
+    margin: 0 auto;
+  }
+
+  section.prod-detail div.prod-box-wrapper div.prod-box form.prod-detail-inputs button.addTo {
+    width: 100%;
+  }
+
+  section.demo img.demo {
+    display: block;
+    margin: 0 auto;
+  }
+  section.demo form.demoForm div.demoInputs select {
+    width: 300px;
+    margin: 40px auto;
+  }
+
+  .pale-blue-cta p {
+    text-align: left;
+  }
+  .pale-blue-cta button {
+    margin-top: 8%;
+  }
+
+  section.prov-info p {
+    padding-right: 0;
+  }
+
+  section.logoFarm div.bg-logoFarm {
+    height: 395px;
+  }
+  section.logoFarm div.bg-logoFarm h4 {
+    font-size: 1.125em;
+  }
+}
+@media (min-width: 1440px) {
+  div.hero-header {
+    height: 550px;
+  }
+
+  nav.main ul {
+    width: 60%;
+    height: 70px;
+    float: right;
+    margin: 0;
+    padding: 0;
+  }
+  nav.main ul li a {
+    color: white;
+    padding: 8px 20px;
+    height: 43px;
+    font-weight: 100;
+    font-size: 1.25em;
+  }
+  nav.main ul li.home,
+  nav.main ul li.catalog,
+  nav.main ul li.contact {
+    width: 15%;
+    text-align: center;
+  }
+  nav.main ul li.learn,
+  nav.main ul li.broker {
+    width: 20%;
+    text-align: center;
+  }
+
+  a.yellow-bg-link {
+    font-size: 1.75em;
+    padding: 60px 0;
+  }
+
+  section.catalog-grid div.demoBlk, section.catalog-grid div.wizBlk, section.catalog-grid div.orderBlk {
+    width: 33.333333%;
+    height: 550px;
+  }
+  section.catalog-grid div.demoBlk h4, section.catalog-grid div.wizBlk h4, section.catalog-grid div.orderBlk h4 {
+    margin: 5% 0 0 0;
+  }
+  section.catalog-grid div.demoBlk h6, section.catalog-grid div.wizBlk h6, section.catalog-grid div.orderBlk h6 {
+    font-size: 0.875em;
+  }
+  section.catalog-grid div.demoBlk img.rocket, section.catalog-grid div.wizBlk img.rocket, section.catalog-grid div.orderBlk img.rocket {
+    width: 33%;
+    margin-top: 17%;
+    margin-bottom: 4%;
+  }
+  section.catalog-grid div.demoBlk img.wizard, section.catalog-grid div.wizBlk img.wizard, section.catalog-grid div.orderBlk img.wizard {
+    width: 40%;
+    margin-top: 10%;
+    margin-bottom: 11%;
+  }
+  section.catalog-grid div.demoBlk img.order, section.catalog-grid div.wizBlk img.order, section.catalog-grid div.orderBlk img.order {
+    width: 60%;
+    margin-top: 17%;
+    margin-bottom: 12%;
+  }
+
+  section.logoFarm div.bg-logoFarm {
+    height: 455px;
+  }
+}
+@media (min-width: 1600px) {
+  div.hero-header {
+    height: 600px;
+  }
+
+  div.cloud div.cloudImg {
+    width: 40%;
+    padding: 80px 0;
+    background-size: 70%;
+    height: 207px;
+    display: block;
+    margin: 0 auto;
+  }
+
+  .yellow-hdr {
+    background: #406AAE;
+    height: 100px;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+  }
+  .yellow-hdr div.title {
+    height: 100px;
+  }
+  .yellow-hdr div.title h3 {
+    color: black;
+    font-weight: normal;
+    margin: 0;
+    padding: 0;
+    font-size: 1.75em;
+    position: relative;
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+  }
+
+  section.catalog-grid div.demoBlk, section.catalog-grid div.wizBlk, section.catalog-grid div.orderBlk {
+    height: 600px;
+  }
+  section.catalog-grid div.demoBlk h6, section.catalog-grid div.wizBlk h6, section.catalog-grid div.orderBlk h6 {
+    font-size: 1em;
+  }
+
+  section.logoFarm div.bg-logoFarm {
+    height: 475px;
+  }
+  section.logoFarm div.bg-logoFarm h4 {
+    line-height: 5px;
+    height: 5%;
+  }
+}
+@media (min-width: 1900px) {
+  div.hero-header {
+    height: 700px;
+  }
+
+  nav.main {
+    height: 150px;
+  }
+  nav.main ul {
+    width: 1100px;
+    height: 70px;
+    float: right;
+  }
+  nav.main ul li.home,
+  nav.main ul li.catalog,
+  nav.main ul li.contact,
+  nav.main ul li.learn,
+  nav.main ul li.broker {
+    width: 20%;
+    text-align: center;
+    font-size: 1.25em;
+  }
+
+  div.cloud div.cloudImg {
+    width: 30%;
+    background-size: 80%;
+  }
+
+  a.options3 div.estimate,
+  a.options3 div.learn,
+  a.options3 div.provider {
+    width: 33.333333%;
+    height: 390px;
+    padding: 20px 0;
+    border-bottom: 1px solid #e9e9e9;
+  }
+  a.options3 div.estimate h3,
+  a.options3 div.learn h3,
+  a.options3 div.provider h3 {
+    text-align: left;
+    padding: 20% 0 0 20%;
+  }
+  a.options3 div.estimate p,
+  a.options3 div.learn p,
+  a.options3 div.provider p {
+    text-align: left;
+    padding: 0 0 0 20%;
+  }
+  a.options3 div.estimate:hover, a.options3 div.learn:hover, a.options3 div.provider:hover {
+    background-color: #022644;
+  }
+  a.options3 div.estimate:hover h3, a.options3 div.learn:hover h3, a.options3 div.provider:hover h3 {
+    color: white;
+  }
+  a.options3 div.estimate:hover p, a.options3 div.learn:hover p, a.options3 div.provider:hover p {
+    color: white;
+  }
+  a.options3 div.estimate {
+    background: url("../img/estimate.png") right center no-repeat;
+    background-size: 200px;
+  }
+  a.options3 div.learn {
+    background: url("../img/learn.png") right center no-repeat;
+    background-size: 250px;
+  }
+  a.options3 div.provider {
+    background: url("../img/provider.png") right center no-repeat;
+    background-size: 250px;
+  }
+
+  section.catalog-grid div.demoBlk, section.catalog-grid div.wizBlk, section.catalog-grid div.orderBlk {
+    height: 800px;
+  }
+  section.catalog-grid div.demoBlk h4, section.catalog-grid div.wizBlk h4, section.catalog-grid div.orderBlk h4 {
+    margin: 5% 0 0 0;
+  }
+  section.catalog-grid div.demoBlk h6, section.catalog-grid div.wizBlk h6, section.catalog-grid div.orderBlk h6 {
+    font-size: 1em;
+  }
+  section.catalog-grid div.demoBlk img.rocket, section.catalog-grid div.wizBlk img.rocket, section.catalog-grid div.orderBlk img.rocket {
+    width: 200px;
+    margin-top: 17%;
+    margin-bottom: 4%;
+  }
+  section.catalog-grid div.demoBlk img.wizard, section.catalog-grid div.wizBlk img.wizard, section.catalog-grid div.orderBlk img.wizard {
+    width: 250px;
+    margin-top: 15%;
+    margin-bottom: 11%;
+  }
+  section.catalog-grid div.demoBlk img.order, section.catalog-grid div.wizBlk img.order, section.catalog-grid div.orderBlk img.order {
+    width: 375px;
+    margin-top: 17%;
+    margin-bottom: 12%;
+  }
+
+  section.logoFarm div.bg-logoFarm {
+    height: 550px;
+  }
+  section.logoFarm div.bg-logoFarm h4 {
+    line-height: 5px;
+    height: 5%;
+  }
+}

@@ -1,0 +1,7 @@
+name = Workflow extensions
+description = Various UI improvements for the Workflow module. In particular the replacement of the workflow radio buttons by either a drop-down or more intuitive single-action buttons with configurable labels.
+core = 7.x
+package = Workflow
+configure = admin/config/workflow/workflow_extensions
+files[] = views/workflow_extensions_handler_field_state_change_form.inc
+files[] = views/workflow_extensions_handler_field_workflow_comment_link_edit.inc

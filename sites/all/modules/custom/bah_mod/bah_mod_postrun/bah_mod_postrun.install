@@ -1,0 +1,14 @@
+<?php
+/**
+* Implements hook_install().
+*/
+function bah_mod_postrun_install() {
+  _bah_mod_postrun_set_weight();
+}
+
+function _bah_mod_postrun_set_weight() {
+  db_update('system')
+    ->fields(array('weight' => 20))
+    ->condition('name', 'bah_mod_postrun', '=')
+    ->execute();
+}

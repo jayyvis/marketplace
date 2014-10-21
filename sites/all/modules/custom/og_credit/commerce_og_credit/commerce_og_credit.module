@@ -1,0 +1,352 @@
+<?php
+
+/**
+ * @file
+ * commerce_og_credit.module
+ *
+ * This module allows for order payment using Organic Group Credits.
+ *
+ */
+
+// @todo Remove unused constants
+define('COMMERCE_OG_CREDIT_PAYMENT', 'commerce_og_credit_payment');
+define('COMMERCE_OG_CREDIT_DISPLAY', 'commerce_og_credit_display');
+define('COMMERCE_OG_CREDIT_PAY_MODERATE', 'commerce_og_credit_pay_moderate');
+define('COMMERCE_OG_CREDIT_PAY_DISPLAY', 'commerce_og_credit_pay_display');
+define('COMMERCE_OG_CREDIT_PAY_CATEGORY', 'commerce_og_credit_pay_category');
+
+/**
+ * Implementation of hook_help().
+ */
+function commerce_og_credit_help($path, $arg) {
+  switch ($path) {
+    case 'admin/modules#description':
+      return t('<strong>Organic Groups Credit Payment:</strong> Interfaces Organic Group Credit with Drupal Commerce so users can make purchases with og_credit.');
+  }
+}
+
+/**
+ * Implements hook_theme().
+ * @todo Do we even need this?
+ */
+function commerce_og_credit_theme() {
+  return array(
+    'commerce_og_credit_credits' => array(
+      'variables' => array('credits' => 0, 'units' => NULL, 'view_mode' => 'full', 'attributes' => array()),
+    ),
+  );
+}
+
+/**
+ * Theme the OG Credits.
+ * @todo Do we even need this?
+ *
+ * @param array $variables
+ * @return string The formatted value.
+ */
+function theme_commerce_og_credit_credits($variables) {
+  $output = '';
+  $attributes = isset($variables['attributes']) ?
+    $variables['attributes'] : array();
+
+  if (isset($attributes['class'])) {
+    array_unshift($attributes['class'], 'product-info');
+  }
+  else {
+    $attributes['class'] = array('product-info');
+  }
+
+  if ($variables['credits']) {
+    $output = '<div ' . drupal_attributes($attributes) . '>';
+    $output .= '<span class="price-credits-label">' .
+      $variables['units'] . '</span>';
+
+    $output .= $variables['credits'];
+    $output .= '</div>';
+  }
+
+  return $output;
+}
+
+/**
+ * Implementation of hook_node_view().
+ */
+function commerce_og_credit_node_view($node, $view_mode, $lang_code) {
+  // @todo Review commerce_userpoints for how to best handle this hook.
+  // Do we even want to use this?
+
+//  if (commerce_product_is_product($node)) {
+//    $dispStyle = variable_get(COMMERCE_OG_CREDIT_DISPLAY, 2);
+//    $credit_payment = variable_get(COMMERCE_OG_CREDIT_PAYMENT, 1);
+//    if (module_exists('commerce_multicurrencies_store')) {
+//      $target = _commerce_multicurrencies_store_get_target_currency();
+//      $from = variable_get('commerce_currency_code', 'USD');
+//      if ($from != $target) {
+//        $new_price = currency_api_convert($from, $target, $credit_payment);
+//        $credit_payment = $new_price['value'];
+//      }
+//    }
+//    $creditCost = ceil($node->sell_price * $credit_payment);
+//    switch($dispStyle) {
+//      case 2:
+//        $node->content['sell_price']['#suffixes'][] = '<div class="sell-price-credits">' . t('OG Credits: ') . $creditCost .'</div>';
+//        $node->content['display_price']['#suffixes'][] = '<div class="display-price-credits">' . t('OG Credits: ') . $creditCost . '</div>';
+//        break;
+//      case 3:
+//        $node->content['sell_price_og_credits'] = array(
+//          '#theme' => 'commerce_og_credit_credits',
+//          '#credits' => $creditCost,
+//          '#units' => t('OG Credits: '),
+//          '#view_mode' => $view_mode,
+//          '#attributes' => array(
+//            'class' => array(
+//              'sell-credits',
+//            ),
+//          ),
+//        );
+//        $node->content['display_price_og_credits'] = array(
+//          '#theme' => 'commerce_og_credit_credits',
+//          '#credits' => $creditCost,
+//          '#units' => t('OG Credits: '),
+//          '#view_mode' => $view_mode,
+//          '#attributes' => array(
+//            'class' => array(
+//              'display-price',
+//            ),
+//          ),
+//        );
+//        //remove sell_price and display_price
+//        $node->content['sell_price']['#access'] = FALSE;
+//        $node->content['display_price']['#access'] = FALSE;
+//        break;
+//    }
+//  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// @todo Create the DC payment method
+
+// @todo Modify the order and checkout data to include our payment method data
+
+// @todo Add a function to get the current amount paid on an order, if not
+// already a function in Drupal Commerce
+
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Implements hook_commerce_payment_method_info().
+ */
+function commerce_og_credit_commerce_payment_method_info() {
+  $payment_methods = array();
+
+  $payment_methods['commerce_og_credit'] = array(
+    'title' => t('OG Credits'),
+    'description' => t('Pay by OG credits.'),
+    'active' => TRUE,
+  );
+
+  return $payment_methods;
+}
+
+/**
+ * Payment method callback: submit form.
+ */
+function commerce_og_credit_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
+  $account = user_load($order->uid);
+  $groups = og_credit_get_group_options($account);
+
+  if (!empty($groups)) {
+    $form['og_credit_group'] = array(
+      '#type' => 'select',
+      '#title' => t('Pay with credits from this group'),
+      '#options' => $groups,
+      '#default_value' => !empty($order->payment_details['og_credit_group']) ?
+          $order->payment_details['og_credit_group'] : NULL,
+    );
+  }
+  else {
+    /*$form['og_credit_nogroup'] = array(
+      '#markup' => '<p>' . variable_get('og_credit_nogroup_message', OG_CREDIT_NOGROUP_MESSAGE) . '</p>',
+    );*/
+    $form['og_credit_group'] = array(
+      '#type' => 'select',
+      '#title' => t('Pay with credits from this group'),
+      '#options' => array('' => t('- None Available -')),
+      '#description' => variable_get('og_credit_nogroup_message', OG_CREDIT_NOGROUP_MESSAGE),
+      '#attributes' => array(
+        'class' => array('nogroup'),
+      ),
+    );
+  }
+
+  return $form;
+}
+
+/**
+ * Payment method callback: submit form validation.
+ */
+function commerce_og_credit_submit_form_validate($payment_method, $pane_form, $pane_values, $order, $form_parents = array()) {
+  // @see commerce_payment_example.module
+  // @todo Properly validate our form.
+
+  // Validate the credit card fields.
+//  module_load_include('inc', 'commerce_payment', 'includes/commerce_payment.credit_card');
+
+//  $settings = array(
+//    'form_parents' => array_merge($form_parents, array('credit_card')),
+//  );
+
+  // Even though a form error triggered by the validate handler would be enough
+  // to stop the submission of the form, it's not enough to stop it from a
+  // Commerce standpoint because of the combined validation / submission going
+  // on per-pane in the checkout form. Thus even with a call to form_set_error()
+  // this validate handler must still return FALSE.
+//  if (!commerce_payment_credit_card_validate($pane_values['credit_card'], $settings)) {
+//    return FALSE;
+//  }
+}
+
+/**
+ * Payment method callback: submit form submission.
+ */
+function commerce_og_credit_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge) {
+  // @todo Throw an error if the 'og_credit_group' key is absent?
+  $order->data['commerce_og_credit'] = $pane_values['og_credit_group'];
+  list($entity_type, $gid) =
+    array_merge(
+      explode('|', $order->data['commerce_og_credit']),
+      array('node',0) // Defaults
+    );
+  $payment_method['settings']['entity_type'] = $entity_type;
+  $payment_method['settings']['gid'] = $gid;
+  commerce_og_credit_transaction($payment_method, $order, $charge);
+}
+
+
+/**
+ * Creates an example payment transaction for the specified charge amount.
+ *
+ * @see commerce_payment_example.module
+ *
+ * @param $payment_method
+ *   The payment method instance object used to charge this payment.
+ * @param $order
+ *   The order object the payment applies to.
+ * @param $charge
+ *   An array indicating the amount and currency code to charge.
+ */
+function commerce_og_credit_transaction($payment_method, $order, $charge) {
+  // Prepare the amount values.
+  $amount = $charge['amount'];
+  $og_credit_amount = commerce_currency_amount_to_decimal($amount, $charge['currency_code']);
+  $og_credit_amount = array_shift(array_values(module_invoke_all('commerce_og_credit_amount', $og_credit_amount)));
+
+  // Load the current amount to modify.
+  $entity_type = $payment_method['settings']['entity_type'];
+  $gid = $payment_method['settings']['gid'];
+  $current_amount = og_credit_get_amount($entity_type, $gid);
+  og_credit_set_amount($entity_type, $gid, $current_amount - $og_credit_amount);
+
+  // Add the group information to the order. This must precede the transaction.
+  $lang = LANGUAGE_NONE;
+//  $order->{OG_AUDIENCE_FIELD}[$lang][0]['target_type'] = $entity_type;
+  $order->{OG_AUDIENCE_FIELD}[$lang][0]['target_id'] = $gid;
+  drupal_alter('commerce_og_credit_transaction_order', $order);
+  commerce_order_save($order);
+
+  // Reset the cached order before processing the transaction
+  // @see https://www.drupal.org/node/1514618#comment-5960468
+  entity_get_controller('commerce_order')->resetCache(array($order->order_id));
+
+  // Process a payment transaction.
+  $transaction = commerce_payment_transaction_new('commerce_og_credit', $order->order_id);
+  $transaction->instance_id = $payment_method['instance_id'];
+  $transaction->amount = $charge['amount'];
+  $transaction->currency_code = $charge['currency_code'];
+  // @todo React to a bad GID value with a failure.
+  $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
+  $transaction->message = 'Paid with OG credits.';
+  $transaction->payload['entity_type'] = $entity_type;
+  $transaction->payload['gid'] = $gid;
+  commerce_payment_transaction_save($transaction);
+}
+
+/**
+ * Implements hook_entity_delete().
+ *
+ * React to the removal of transaction entries.
+ */
+function commerce_og_credit_entity_delete($entity, $type) {
+  if ($type == 'commerce_payment_transaction' && $entity->payment_method == 'commerce_og_credit') {
+    $amount = commerce_currency_amount_to_decimal($entity->amount, $entity->currency_code);
+    $entity_type = empty($entity->payload['entity_type']) ?
+      'node' : $entity->payload['entity_type'];
+    $gid = empty($entity->payload['gid']) ? 0 : $entity->payload['gid'];
+    $current_amount = og_credit_get_amount($entity_type, $gid);
+    og_credit_set_amount($entity_type, $gid, $current_amount + $amount);
+  }
+
+  // @todo Handle the deletion of a commerce_order and an OG node.
+}
+
+/**
+ * Get the name of the group linked to this order's payment.
+ *
+ * @param string $og_credit_group The payment's OG credit string.
+ *
+ * @return string The OG entity's human-readable name.
+ */
+function commerce_og_credit_getgroupname($og_credit_group) {
+  list($entity_type, $id) = explode('|', $og_credit_group);
+  return og_credit_getgroupname($entity_type, $id);
+}
+
+/**
+ * Get the group entity linked to this order's payment.
+ *
+ * @param string $og_credit_group The payment's OG credit string.
+ *
+ * @return object The OG entity.
+ */
+function commerce_og_credit_getgroup($og_credit_group) {
+  list($entity_type, $id) = explode('|', $og_credit_group);
+  return og_credit_getgroup($entity_type, $id);
+}
+
+
+
+/**
+ * Add the og_credit field to the specified bundle
+ *
+ * @param string $entity_type The parent entity type for this bundle.
+ * @param string $bundle The name of the bundle to add the field to.
+ */
+function _commerce_og_credit_addfield($entity_type, $bundle) {
+  // See if this field is already attached.
+  if (_commerce_og_credit_is_fielded($bundle)) {
+    return;
+  }
+
+  // This could be run during this module's install process, so use get_t().
+  $t = get_t();
+
+  // Add the OG field to the bundle.
+  $field_name = OG_AUDIENCE_FIELD;
+  og_create_field($field_name, $entity_type, $bundle);
+}
+
+/**
+ * Get bundles that have the OG Audience field attached
+ *
+ * @param string $bundle The name of the bundle to check.
+ *
+ * @return array An array with entity_type keys and nested bundle array values.
+ */
+function _commerce_og_credit_is_fielded($bundle = 'commerce_order') {
+  $field_info = field_info_field(OG_AUDIENCE_FIELD);
+  $bundles = (!empty($field_info['bundles']) && is_array($field_info['bundles'])) ?
+    $field_info['bundles'] : array();
+  return in_array($bundle, $bundles);
+}
+

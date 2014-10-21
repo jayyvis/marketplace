@@ -1,0 +1,203 @@
+<?php
+
+/**
+ * @file
+ * bah_ldap_glue.module
+ *
+ * Helper functions to support the BAH LDAP workflow
+ *
+ */
+
+/**
+ * Implements hook_entity_insert().
+ *
+ * Wrapping bah_ldap_glue_entity_update()
+ *
+ * @param $entity Entity
+ * @param $type
+ */
+function bah_ldap_glue_entity_insert($entity, $type) {
+  bah_ldap_glue_entity_update($entity, $type);
+}
+
+function bah_ldap_glue_server_connect($ldap_field_instance, $drupal_field_instance, $wrapper) {
+
+  // Zero out the Drupal user reference field to start. We will recompute it as we go.
+  $drupal_field_wrapper = $wrapper->$drupal_field_instance;
+  $drupal_field_wrapper->set(NULL);
+
+  // Process each LDAP field
+  $ldap_field_wrapper = $wrapper->$ldap_field_instance;
+  $dn = $ldap_field_wrapper->value();
+  $drupal_account = FALSE;
+
+  drupal_load('module', 'ldap_servers');
+
+  if (!$server_conf = ldap_servers_get_servers()) {
+    watchdog('ldap_ref_create_user', 'Failed to get valid ldap servers configuration.', array(), WATCHDOG_ERROR);
+    form_set_error($field_instance, 'Server Error: Failed to get valid ldap servers configuration.' . $error);
+    return;
+  }
+
+  // We can have multiple servers, so look through all of them.
+  foreach ($server_conf as $sid => $ldap_server) {
+    /* @var $ldap_server LdapServer */
+
+    $watchdog_tokens['%sid'] = $sid;
+    $watchdog_tokens['%bind_method'] = $ldap_server->bind_method;
+
+    // #1 CONNECT TO SERVER
+    $result = $ldap_server->connect();
+    if ($result != LDAP_SUCCESS) {
+      continue; // next server, please
+    }
+
+    $bind_success = FALSE;
+    if ($ldap_server->bind_method == LDAP_SERVERS_BIND_METHOD_SERVICE_ACCT) {
+      $bind_success = ($ldap_server->bind(NULL, NULL, FALSE) == LDAP_SUCCESS);
+    }
+    elseif ($ldap_server->bind_method == LDAP_SERVERS_BIND_METHOD_ANON ||
+      $ldap_server->bind_method == LDAP_SERVERS_BIND_METHOD_ANON_USER
+    ) {
+      $bind_success = ($ldap_server->bind(NULL, NULL, TRUE) == LDAP_SUCCESS);
+    }
+    elseif ($sso_login) {
+
+    }
+    elseif ($ldap_server->bind_method == LDAP_SERVERS_BIND_METHOD_USER && $sso_login == FALSE) {
+      // We don't support username/pass binding since we don't have access to the current user's creds.
+    }
+
+    if (!$bind_success) {
+      $authentication_result = ($ldap_server->bind_method == LDAP_SERVERS_BIND_METHOD_USER) ? LDAP_AUTHENTICATION_RESULT_FAIL_CREDENTIALS : LDAP_AUTHENTICATION_RESULT_FAIL_BIND;
+      continue; // if bind fails, onto next server
+    }
+
+    // #3 CHECK SERVER FOR DN
+    if (!$dn_ldap_user = $ldap_server->dnExists($dn, 'ldap_entry', array())) {
+      continue; // Not found, on to the next server
+    }
+  }
+
+  return array(
+    "dn_ldap_user" => $dn_ldap_user,
+    "ldap_server" => $ldap_server,
+    'dn' => $dn
+  );
+}
+
+function bah_ldap_glue_add_account($dn_ldap_user, $ldap_server, $ldap_field_instance, $dn) {
+  $drupal_account_refs = array();
+  // #4 ADD THE FOUND ACCOUNT TO THE LIST.
+  if ($auth_name = $ldap_server->userUsernameFromDn($dn)) {
+    if ($drupal_account = user_load_by_name($auth_name)) {
+      $drupal_account_refs[] = $drupal_account->uid;
+    }
+    else {
+      form_set_error($ldap_field_instance, t('Server Error: Failed to locate or load correct system account'));
+    }
+    // #4.b IF DN TO ACCOUNT DOES NOT EXIST, THE ACCOUNT NEEDED TO BE PROVISIONED BUT WAS NOT FOR SOME REASON.
+  }
+  else {
+    form_set_error($ldap_field_instance, t('Server Error: Failed to locate or load correct system account'));
+  }
+
+  return array(
+    'drupal_account_refs' => $drupal_account_refs,
+    'drupal_account' => $drupal_account
+  );
+}
+
+function bah_ldap_glue_populate_fields(&$wrapper, $dn_ldap_user, $fields_to_set) {
+  // While we are in here, populate necessary fields
+  foreach ($fields_to_set AS $drupal_field_to_set => $ldap_field_to_get) {
+    if (isset($wrapper->$drupal_field_to_set)) {
+      if (isset($dn_ldap_user[$ldap_field_to_get])) {
+        $wrapper->$drupal_field_to_set->set($dn_ldap_user[$ldap_field_to_get][0]);
+      }
+      else {
+        $wrapper->$drupal_field_to_set->set(NULL);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_update().
+ *
+ * @param $entity Entity
+ * @param $type
+ */
+function bah_ldap_glue_entity_update($entity, $type) {
+  // @TODO: make content type a variable and have an admin form.
+  if ($type == 'field_collection_item' && $entity->field_name == 'field_add_cont') {
+    $wrapper = entity_metadata_wrapper($type, $entity);
+
+    // @TODO: make ref field_instances configurable with admin form.
+    $field_instances = array(
+      'field_ldap_user' => 'field_add_user',
+    );
+
+    // drupal field => ldap attribute
+    $fields_to_set = array(
+      'field_add_name_f' => 'givenName',
+      'field_add_name_l' => 'sn',
+      'field_add_phone' => 'telephoneNumber',
+    );
+
+    foreach ($field_instances as $ldap_field_instance => $drupal_field_instance) {
+
+      if (!isset($wrapper->$ldap_field_instance) || !isset($wrapper->$drupal_field_instance)
+      ) {
+        continue; // Move on if we can't find our field.
+      }
+
+      $server_connect_array = bah_ldap_glue_server_connect($ldap_field_instance, $drupal_field_instance, $wrapper);
+      extract($server_connect_array);
+
+
+      $accounts = bah_ldap_glue_add_account($dn_ldap_user, $ldap_server, $ldap_field_instance, $dn);
+      extract($accounts);
+
+      bah_ldap_glue_populate_fields($wrapper, $dn_ldap_user, $fields_to_set);
+
+      // end loop through servers
+
+      if ($drupal_account === FALSE) {
+        form_set_error($ldap_field_instance, t('Server Error: Failed to locate proper LDAP account'));
+        return;
+      }
+
+      // Zero out the Drupal user reference field and add recomputed references.
+      $drupal_field_wrapper = $wrapper->$drupal_field_instance;
+      $drupal_field_wrapper->set(NULL);
+
+      $wrapper->$drupal_field_instance->set(reset($drupal_account_refs));
+      field_attach_update($type, $entity);
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ * @param &$form
+ * @param &$form_state
+ * @param $form_id
+ */
+function bah_ldap_glue_form_project_req_node_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form['field_add_cont'])) {
+    foreach ($form['field_add_cont'][LANGUAGE_NONE] AS $delta => &$container) {
+
+      // This if is necessary to avoid the possibility that delta is set but
+      // container is somehow empty.
+      if (isset($container['field_add_user']) && is_array($container['field_add_user'])
+      ) {
+
+        $container['field_add_user']['#access'] = 0;
+        $container['field_add_name_f']['#access'] = 0;
+        $container['field_add_name_l']['#access'] = 0;
+        $container['field_add_phone']['#access'] = 0;
+      }
+    }
+  }
+}

@@ -1,0 +1,172 @@
+<?php
+/**
+ * @file
+ * Code for the Chargeback feature.
+ */
+
+include_once 'chargeback.features.inc';
+
+module_load_include('php', 'chargeback', 'includes/ByteConverter');
+module_load_include('php', 'chargeback', 'includes/DataStore');
+module_load_include('php', 'chargeback', 'includes/Resource');
+module_load_include('php', 'chargeback', 'includes/DrupalNode');
+module_load_include('php', 'chargeback', 'includes/Chargeback');
+module_load_include('php', 'chargeback', 'includes/DrupalFields');
+
+// These values are overridden on the admin settings page:
+define('CB_CF_URL', 'https://mcc-78-112.usae.bah.com/vmdbws/wsdl');
+define('CB_CF_USER', 'admin');
+define('CB_CF_PASS', 'smartvm');
+
+use \boozallenhamilton\pinger\DataStore;
+use \boozallenhamilton\pinger\Resource;
+use \boozallenhamilton\pinger\DrupalNode;
+use \boozallenhamilton\pinger\Chargeback;
+use \boozallenhamilton\pinger\DrupalFields;
+
+
+/*
+ * Implements hook_cron().
+ */
+function chargeback_cron() 
+{
+    //exec("/var/www/pinger/pinger");
+    
+    $cf_url     = variable_get('chargeback_cf_url', CB_CF_URL);
+    $cf_user    = variable_get('chargeback_cf_user', CB_CF_USER);
+    $cf_pass    = variable_get('chargeback_pass', CB_CF_PASS);
+
+    $ds         = new DataStore($cf_url, $cf_user , $cf_pass);
+    $rs         = new Resource($cf_url, $cf_user, $cf_pass);
+    $dn         = new DrupalNode();
+    $f          = new DrupalFields();
+    $datastores = $ds->get();
+    $resources  = $rs->get();
+    $totals     = new StdClass();
+
+    foreach ($resources as $key => $val) {
+
+        $app_code   = $val['app_code'];
+
+        $node       = $dn->get($app_code);
+
+        if ($node === false) {
+            $msg = "Found App Code '{$app_code}' in Cloud Forms, but could not find project with App Code '{$app_code}' in Marketplace";
+            watchdog('chargeback', $msg, array(), WATCHDOG_WARNING);
+            continue;
+        }
+
+        // ** Get ChargeBack
+        $cb                         = new Chargeback($node);
+
+        if ($cb === false) {
+            watchdog('chargeback', 'Unable to get pricing information', array(), WATCHDOG_ERROR);
+            continue;
+        }
+
+        // *** Get the allocated budget and set both
+        $totals->allocated_budget   = $dn->get_field($node, $f->allocated_fund());
+        $node                       = $dn->set_field($node, $f->allocated_fund(), $totals->allocated_budget);
+        $node                       = $dn->set_field($node, $f->allocated_cost(), $totals->allocated_budget);
+
+        // *** Set how many vCPUs we are using
+        $totals->used_vcpu          = $val['aggregate_logical_cpus'];
+        $totals->allocated_vcpu     = $dn->get_field($node, $f->allocated_cpu());
+        $node                       = $dn->set_field($node, $f->used_cpu(), $totals->used_vcpu);
+        
+        // *** Set how much disk space has been used
+        $totals->used_disk          = $ds->used_disk($datastores[$key]);
+        $totals->allocated_disk     = $dn->get_field($node, $f->allocated_disk());
+        $node                       = $dn->set_field($node, $f->used_disk(), $totals->used_disk);
+
+        // *** Set memory totals
+        $totals->used_memory        = $rs->total_ram_used($val['aggregate_vm_memory']);
+        $totals->allocated_memory   = $dn->get_field($node, $f->allocated_memory());
+        $node                       = $dn->set_field($node, $f->used_memory(), $totals->used_memory);
+
+        // *** Set used budget
+        $totals->used_budget        = $cb->used_budget($totals);
+        $node                       = $dn->set_field($node, $f->used_cost(), $totals->used_budget);
+
+        // *** Set the color of the System CSS bar
+        $node                       = $dn->set_field($node, $f->system_css(), $dn->set_resource_color($totals));
+
+        // *** Set the color of the Budget CSS bar
+        $node                       = $dn->set_field($node, $f->budget_css(), $dn->set_budget_color($totals));
+
+        // *** Set the last ping time
+        $node                       = $dn->set_field($node, $f->last_ping(), date('c'));
+
+        // *** Set how many months are left
+        $totals->remaining_months   = $cb->remaining_months();
+        $node                       = $dn->set_field($node, $f->months_rem(), $totals->remaining_months);
+
+        // *** Log that we updated this
+        $msg = "Project with App Code '{$app_code}' has been updated. <p>Changed:</p><p><pre>".print_r($node, true)."</pre></p>";
+        watchdog('chargeback', $msg, array(), WATCHDOG_DEBUG);
+        
+        watchdog('chargeback', 'Chargeback CRON has completed successfully', array(), WATCHDOG_NOTICE);
+
+        // *** Save the node
+        $dn->save($node);
+
+    }
+}
+
+/**
+ * Implements hook_menu()
+ */
+function chargeback_menu()
+{
+    $items = array();
+
+    $items['chargeback.json'] = array(
+        'page callback'     => 'chargeback_pricing_latest_json',
+        'page arguments'    => array(1),
+        'access callback'   => TRUE,
+        'type'              => MENU_CALLBACK,
+    );
+
+    $items['admin/commerce/chargeback'] = array(
+        'title'             => t('Broker Chargeback Updater'),
+        'description'       => t('Configure settings.'),
+        'page callback'     => 'chargeback_admin',
+        'access arguments'  => array('administer site configuration'),
+        'type'              => MENU_NORMAL_ITEM,
+        'file'              => 'chargeback.admin.inc',
+    );
+
+    return $items;
+}
+
+function chargeback_pricing_latest_json()
+{
+    $nodes  = node_load_multiple(array(), array('type' => 'chargeback'));
+    $start  = 0;
+    $node   = false;
+
+    foreach ($nodes as $key => $value) {
+        if ($key > $start) {
+            $node = $value;
+            $start = $key;
+        }
+    }
+
+    $fields = array_keys(field_info_instances("node", "chargeback"));
+    $prices = array();
+
+    foreach ($fields as $field)
+    {
+        list($foo, $env, $key) = explode('_', $field, 3);
+        if ($node === false) {
+            $prices[$env][$key] = 0.00;
+        } else {
+            $prices[$env][$key] = (float) $node->{$field}['und'][0]['value'];
+        }
+        
+    }
+
+    echo json_encode($prices);
+
+    drupal_exit();
+}

@@ -1,0 +1,12 @@
+; $Id: uc_og_credit.info
+package = "Organic Groups"
+name = Organic Groups Credit - Ubercart Payment
+description = "Allows for order payment using Organic Group Credits."
+version = "7.x-1.0"
+core = 7.x
+
+dependencies[] = og_credit
+dependencies[] = uc_order
+dependencies[] = uc_cart
+dependencies[] = uc_payment
+

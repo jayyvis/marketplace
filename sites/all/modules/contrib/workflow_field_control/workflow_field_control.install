@@ -1,0 +1,85 @@
+<?php
+
+// A schema to store: state id, role id, entity type, bundle name, field name,
+// and a read/write/required values (individual boolean fields for scalability,
+// performance, and normalization).
+// @see http://stackoverflow.com/questions/2925245/user-role-permissions-for-different-modules-using-bitwise-operators
+
+// Bitwise is likely confusing and not as easily self-documenting, but for a ref
+// @see http://www.php4every1.com/tutorials/create-permissions-using-bitwise-operators-in-php/
+
+/**
+ * Implements hook_schema().
+ */
+function workflow_field_control_schema() {
+  $schema['workflow_field_control'] = array(
+    'fields' => array(
+      'sid' => array(
+        'description' => 'The {workflow_states}.sid start state.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '10',
+      ),
+      'rid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Primary Key: {role}.rid for role.',
+      ),
+      'entity_type' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'bundle' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'field_name' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'disabled' => array(
+        'description' => 'Boolean indicating whether the field is disabled.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
+      'view' => array(
+        'description' => 'Boolean indicating whether the field is viewable.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'edit' => array(
+        'description' => 'Boolean indicating whether the field is editable.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'required' => array(
+        'description' => 'Boolean indicating whether the field is required.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      // @todo Add fields.
+    ),
+    // @todo Complete the primary key and index setup
+    'primary key' => array('sid', 'rid', 'entity_type', 'bundle', 'field_name'),
+    'indexes' => array(
+      'field_instance' => array('entity_type', 'bundle', 'field_name'),
+    ),
+  );
+  return $schema;
+}
+
+

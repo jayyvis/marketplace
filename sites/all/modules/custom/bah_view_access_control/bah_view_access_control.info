@@ -1,0 +1,6 @@
+name = BAH Views Access control
+description = Provides the proper access control of the nodes being accessed by the users
+core = 7.x
+package = Views
+
+

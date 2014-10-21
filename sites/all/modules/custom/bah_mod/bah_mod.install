@@ -1,0 +1,64 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function bah_mod_install() {
+  _bah_mod_set_weight();
+  bah_mod_update_groups();
+}
+
+function _bah_mod_set_weight() {
+  db_update('system')
+    ->fields(array('weight' => -20))
+    ->condition('name', 'bah_mod', '=')
+    ->execute();
+}
+
+/**
+ * Implements hook_update_N().
+ */
+function bah_mod_update_7100(&$sandbox) {
+  bah_mod_update_groups();
+}
+
+/**
+ * Fixes the weight and installs bah_mod_postrun.
+ *
+ */
+function bah_mod_update_7101(&$sandbox) {
+  _bah_mod_set_weight();
+  if (!module_exists('bah_mod_postrun')){
+    if (!module_enable(array('bah_mod_postrun'))){
+      throw new DrupalUpdateException('bah_mod_postrun module is missing or could not be enabled. Please locate and manually install.');
+    }
+  }
+}
+
+/**
+ * Removes bad variable.
+ */
+function bah_mod_update_7102(&$sandbox) {
+  db_delete('variable')
+    ->condition('name', 'reroute_email_address', '=')
+    ->execute();
+}
+
+function bah_mod_update_groups() {
+  module_load_include("module", "bah_mod");
+  module_load_include("module", "og");
+  $og_bundles = og_get_all_group_bundle();
+  $node_bundles = $og_bundles['node'];
+
+  foreach ($node_bundles as $bundle) {
+    $results = db_select('node', 'n')
+      ->fields('n', array('nid'))
+      ->condition('type', $bundle, "=")
+      ->execute();
+
+    foreach ($results as $result) {
+      $node = node_load($result->nid);
+      bah_mod_node_update($node);
+    }
+  }
+}

@@ -1,0 +1,160 @@
+<?php
+
+/**
+ * @file
+ * ldap_ref_create_user.module
+ *
+ * Creates new Drupal user from an LDAP ref when an entity is saved
+ *
+ */
+
+/**
+ * Implements hook_entity_insert().
+ *
+ * Wrapping ldap_ref_create_user_entity_update()
+ *
+ * @param $entity Entity
+ * @param $type
+ */
+function ldap_ref_create_user_entity_insert($entity, $type) {
+  ldap_ref_create_user_entity_update($entity, $type);
+}
+
+/**
+ * Implements hook_entity_update().
+ *
+ * @param $entity Entity
+ * @param $type
+ */
+function ldap_ref_create_user_entity_update($entity, $type) {
+  // @TODO: make content type a variable and have an admin form.
+  if ($type == 'field_collection_item' && $entity->field_name == 'field_add_cont') {
+    $wrapper = entity_metadata_wrapper($type, $entity);
+
+    // @TODO: make ref field_instances configurable with admin form.
+    $field_instances = array(
+      'field_ldap_user',
+    );
+
+    // Grab wrappers for each field's values.
+    foreach ($field_instances as $field_instance) {
+      if (!isset($wrapper->$field_instance)) {
+        continue; // Move on if we can't find our field.
+      }
+      $field_wrapper = $wrapper->$field_instance;
+      // Get distinguished name to check against the ldap module.
+      $dn = $field_wrapper->value();
+      $drupal_account = FALSE;
+
+      drupal_load('module', 'ldap_servers');
+
+      if (!$server_conf = ldap_servers_get_servers()) {
+        watchdog('ldap_ref_create_user', 'Failed to get valid ldap servers configuration.', array(), WATCHDOG_ERROR);
+        form_set_error($field_instance, 'Server Error: Failed to get valid ldap servers configuration.' . $error);
+        return;
+      }
+
+      // We can have multiple servers, so look through all of them.
+      foreach ($server_conf as $sid => $ldap_server) {
+        $watchdog_tokens['%sid'] = $sid;
+        $watchdog_tokens['%bind_method'] = $ldap_server->bind_method;
+
+        // #1 CONNECT TO SERVER
+        $result = $ldap_server->connect();
+        if ($result != LDAP_SUCCESS) {
+          continue; // next server, please
+        }
+
+        $bind_success = FALSE;
+        if ($ldap_server->bind_method == LDAP_SERVERS_BIND_METHOD_SERVICE_ACCT) {
+          $bind_success = ($ldap_server->bind(NULL, NULL, FALSE) == LDAP_SUCCESS);
+        }
+        elseif ($ldap_server->bind_method == LDAP_SERVERS_BIND_METHOD_ANON ||
+          $ldap_server->bind_method == LDAP_SERVERS_BIND_METHOD_ANON_USER
+        ) {
+          $bind_success = ($ldap_server->bind(NULL, NULL, TRUE) == LDAP_SUCCESS);
+        }
+        elseif ($sso_login) {
+
+        }
+        elseif ($ldap_server->bind_method == LDAP_SERVERS_BIND_METHOD_USER && $sso_login == FALSE) {
+          // We don't support username/pass binding since we don't have access to the current user's creds.
+        }
+
+        if (!$bind_success) {
+          $authentication_result = ($ldap_server->bind_method == LDAP_SERVERS_BIND_METHOD_USER) ? LDAP_AUTHENTICATION_RESULT_FAIL_CREDENTIALS : LDAP_AUTHENTICATION_RESULT_FAIL_BIND;
+          continue; // if bind fails, onto next server
+        }
+
+        // #3 CHECK SERVER FOR DN
+        if (!$dn_ldap_user = $ldap_server->dnExists($dn, 'ldap_entry', array())) {
+          continue; // Not found, on to the next server
+        }
+
+        // #4 IF DN->ACCOUNT DOES NOT EXIST, THE ACCOUNT NEEDS PROVISIONED
+        $ldap_auth_name = $ldap_server->userUsernameFromDn($dn);
+        if (!$drupal_account = user_load_by_name($ldap_auth_name)) {
+          $drupal_accountname = $ldap_auth_name;
+
+          /*
+           * @todo: Ignore this block for now. Ideally, we should have our own setting.
+          $user_register = variable_get('user_register', USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL);
+          if ($user_register == USER_REGISTER_ADMINISTRATORS_ONLY) {
+              form_set_error($field_instance, t('Server Error: Attempt to create account failed. Administrative user must create user.',
+                  $watchdog_tokens));
+              return;
+          }
+          */
+
+          if (variable_get('user_register', USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL) == USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL) {
+            $user_edit = array(
+              'name' => $drupal_accountname,
+              'status' => 0
+            ); // if admin approval required, set status to 0.
+          }
+          else {
+            $user_edit = array('name' => $drupal_accountname, 'status' => 1);
+          }
+
+          $user_edit['mail'] = (!empty($ldap_server->mail_attr) && isset($dn_ldap_user[$ldap_server->mail_attr]) ? $dn_ldap_user[$ldap_server->mail_attr][0] : $dn_ldap_user['mail'][0]);
+
+          if (!$auth_conf = ldap_authentication_get_valid_conf()) {
+            watchdog('ldap_authentication', 'Failed to get valid ldap authentication configuration.', array(), WATCHDOG_ERROR);
+            form_set_error($field_instance, 'Server Error: Failed to get valid ldap authentication configuration.' . $error);
+            return;
+          }
+
+          // don't pass in ldap user to provisionDrupalAccount, because want to requery with correct attributes needed
+          // this may be a case where efficiency dictates querying for all attributes
+          $drupal_account = $auth_conf->ldapUser->provisionDrupalAccount(NULL, $user_edit, NULL, TRUE);
+
+          if ($drupal_account === FALSE) {
+            form_set_error($field_instance, t('Server Error: Failed to create Drupal user account'));
+            return;
+          }
+          else {
+            user_set_authmaps($drupal_account, array('authname_ldap_user' => $drupal_account->name));
+            // Using Rules allows emails to be fired and many other possible reactions
+            // to the creation of a user.
+            if (module_exists('rules')) {
+              $email_template_used = FALSE;
+              rules_invoke_event('ldap_user_created', $drupal_account, $email_template_used);
+            }
+          }
+
+        }
+        else {
+          break; //success
+        }
+
+      } // end loop through servers
+
+      if (!$ldap_auth_name && $drupal_account === FALSE) {
+        form_set_error($field_instance, t('Server Error: Failed to locate account for provisioning'));
+        return;
+      }
+
+    }
+
+  }
+}

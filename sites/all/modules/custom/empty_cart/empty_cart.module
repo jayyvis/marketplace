@@ -1,0 +1,51 @@
+<?php
+
+function empty_cart_menu() {
+  $items['empty-cart'] = array(
+    'title' => 'Empty Cart',
+    'description' => 'A callback function that will empty all the items in the cart',
+    'page callback' => 'empty_cart_clear_cart',
+    'access callback' => 'user_access',
+    'access arguments' => array('view own commerce_order entities'),
+    'type' => MENU_CALLBACK
+  );
+  return $items;
+}
+
+function empty_cart_clear_cart() {
+  global $user;
+  // Loading the order and emptying the cart
+  if ($order = commerce_cart_order_load($user->uid)){
+    commerce_cart_order_empty($order);
+  }
+  
+  // Blantantly ripped from drupal_goto().
+  // We reimplement it because we want to avoid rewrite hooks for redirecting.
+  $path = ''; $options = array(); $http_response_code = 302;
+  
+  // A destination in $_GET always overrides the function arguments.
+  // We do not allow absolute URLs to be passed via $_GET, as this can be an attack vector.
+  if (isset($_GET['destination']) && !url_is_external($_GET['destination'])) {
+    $destination = drupal_parse_url($_GET['destination']);
+    $path = $destination['path'];
+    $options['query'] = $destination['query'];
+    $options['fragment'] = $destination['fragment'];
+  }
+
+  // Except we do not actually want to do this line:
+  //drupal_alter('drupal_goto', $path, $options, $http_response_code);
+
+  // The 'Location' HTTP header must be absolute.
+  $options['absolute'] = TRUE;
+
+  // Guess we do not want this either. Bypassing the rewrite hooks.
+  //$url = url($path, $options);
+  $url = '/' . $path;
+
+  header('Location: ' . $url, TRUE, $http_response_code);
+
+  // The "Location" header sends a redirect status code to the HTTP daemon. In
+  // some cases this can be wrong, so we make sure none of the code below the
+  // drupal_goto() call gets executed upon redirection.
+  drupal_exit($url);
+}

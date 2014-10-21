@@ -1,0 +1,576 @@
+<?php
+
+/**
+ * @file
+ * uc_og_credit.module
+ *
+ * This module allows for order payment using Organic Group Credits.
+ *
+ */
+
+define('UC_OG_CREDIT_UC_PAYMENT', 'uc_og_credit_payment');
+define('UC_OG_CREDIT_DISPLAY', 'uc_og_credit_display');
+define('UC_OG_CREDIT_PAY_MODERATE', 'uc_og_credit_pay_moderate');
+define('UC_OG_CREDIT_PAY_DISPLAY', 'uc_og_credit_pay_display');
+define('UC_OG_CREDIT_PAY_CATEGORY', 'uc_og_credit_pay_category');
+
+/**
+ * Implementation of hook_help().
+ */
+function uc_og_credit_help($path, $arg) {
+  switch ($path) {
+    case 'admin/modules#description':
+      return t('<strong>Organic Groups Credit Payment:</strong> Interfaces Organic Group Credit with Ubercart so users can make purchases with og_credit.');
+  }
+}
+
+
+// @todo The admin settings form should be moved
+// @todo The entity_type might need to be moved...
+///**
+// * Implementation of hook_userpoints api().
+// */
+//function uc_og_credit_userpoints($op, $data = NULL) {
+//  switch($op) {
+//    case 'setting':
+//      if (module_exists('uc_cart') && module_exists('uc_payment')) {
+//        $group = 'uc_og_credit';
+//        $form[$group] = array(
+//          '#type' => 'fieldset',
+//          '#collapsible' => TRUE,
+//          '#collapsed' => TRUE,
+//          '#title' => t('Ubercart Payment Options'),
+//        );
+//        $userpoints_translation = userpoints_translation();
+//        $form[$group][UC_OG_CREDIT_UC_PAYMENT] = array(
+//          '#type' => 'textfield',
+//          '#title' => t('!Points per currency unit', $userpoints_translation),
+//          '#default_value' => variable_get(UC_OG_CREDIT_UC_PAYMENT, 1),
+//          '#description' => t('For example, 1 is $1/point, or 100 is $0.01 per point.', $userpoints_translation),
+//          '#size' => 5,
+//          '#maxlength' => 5,
+//        );
+//        $form[$group][UC_OG_CREDIT_DISPLAY] = array(
+//          '#type' => 'select',
+//          '#title' => t('Display currency, OG credits, or both', $userpoints_translation),
+//          '#default_value' =>  variable_get(UC_OG_CREDIT_DISPLAY,2),
+//          '#options' => array(1 => t('Currency'), 3 => t('Points'), 2 => t('Both')),
+//        );
+//        $form[$group][UC_OG_CREDIT_PAY_MODERATE] = array(
+//          '#type' => 'radios',
+//          '#title' => t('Moderate userpoints transaction'),
+//          '#default_value' => variable_get(UC_OG_CREDIT_PAY_MODERATE, 0),
+//					'#options' => array(t('No'), t('Yes')),
+//        );
+//        $form[$group][UC_OG_CREDIT_PAY_DISPLAY] = array(
+//          '#type' => 'radios',
+//          '#title' => t('Display OG credits details during checkout', $userpoints_translation),
+//          '#default_value' => variable_get(UC_OG_CREDIT_PAY_DISPLAY, 1),
+//          '#options' => array(t('No'), t('Yes')),
+//        );
+//        $form[$group][UC_OG_CREDIT_PAY_CATEGORY] = array(
+//          '#type' => 'select',
+//          '#title' => t('Payment Category'),
+//          '#default_value' => variable_get(UC_OG_CREDIT_PAY_CATEGORY, NULL),
+//          '#options' => userpoints_get_categories(),
+//          '#description' => t('Select which category of OG credits to use when payment is made.', $userpoints_translation),
+//        );
+//      }
+//      return $form;
+//      break;
+//    case 'entity_type':
+//      if ($data->entity_type == 'uc_order') {
+//        $order = uc_order_load($data->entity_id);
+//        if ($order) {
+//          if (user_access('administer orders')) {
+//            return l($data->operation, 'admin/store/orders/' . $order->order_id);
+//          }
+//          else {
+//            return l($data->operation, 'user/' . $order->uid. '/orders/' . $order->order_id);
+//          }
+//        }
+//      }
+//      break;
+//  }
+//}
+
+/**
+ * Implements hook_theme().
+ */
+function uc_og_credit_theme() {
+  return array(
+    'uc_og_credit_credits' => array(
+      'variables' => array('credits' => 0, 'units' => NULL, 'view_mode' => 'full', 'attributes' => array()),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_node_view().
+ */
+function uc_og_credit_node_view($node, $view_mode, $lang_code) {
+  if (uc_product_is_product($node)) {
+    $dispStyle = variable_get(UC_OG_CREDIT_DISPLAY, 2);
+    $credit_uc_payment = variable_get(UC_OG_CREDIT_UC_PAYMENT, 1);
+    if (module_exists('uc_multicurrencies_store')) {
+      $target = _uc_multicurrencies_store_get_target_currency();
+      $from = variable_get('uc_currency_code', 'USD');
+      if ($from != $target) {
+        $new_price = currency_api_convert($from, $target, $credit_uc_payment);
+        $credit_uc_payment = $new_price['value'];
+      }
+    }
+    $creditCost = ceil($node->sell_price * $credit_uc_payment);
+    switch($dispStyle) {
+      case 2:
+        $node->content['sell_price']['#suffixes'][] = '<div class="sell-price-credits">' . t('OG Credits: ') . $creditCost .'</div>';
+        $node->content['display_price']['#suffixes'][] = '<div class="display-price-credits">' . t('OG Credits: ') . $creditCost . '</div>';
+        break;
+      case 3:
+        $node->content['sell_price_og_credits'] = array(
+          '#theme' => 'uc_og_credit_credits',
+          '#credits' => $creditCost,
+          '#units' => t('OG Credits: '),
+          '#view_mode' => $view_mode,
+          '#attributes' => array(
+            'class' => array(
+              'sell-credits',
+            ),
+          ),
+        );
+        $node->content['display_price_og_credits'] = array(
+          '#theme' => 'uc_og_credit_credits',
+          '#credits' => $creditCost,
+          '#units' => t('OG Credits: '),
+          '#view_mode' => $view_mode,
+          '#attributes' => array(
+            'class' => array(
+              'display-price',
+            ),
+          ),
+        );
+        //remove sell_price and display_price
+        $node->content['sell_price']['#access'] = FALSE;
+        $node->content['display_price']['#access'] = FALSE;
+        break;
+    }
+  }
+}
+
+
+function theme_uc_og_credit_credits($variables) {
+  $output = '';
+  $attributes = isset($variables['attributes']) ? $variables['attributes'] : array();
+  if (isset($attributes['class'])) {
+    array_unshift($attributes['class'], 'product-info');
+  }
+  else {
+    $attributes['class'] = array('product-info');
+  }
+  if ($variables['credits']) {
+    $output = '<div ' . drupal_attributes($attributes) . '>';
+    $output .= '<span class="uc-price-credits-label">' . $variables['units'] . '</span>';
+
+    $output .= $variables['credits'];
+    $output .= '</div>';
+  }
+  return $output;
+}
+
+/**
+ * Implementation of hook_uc_payment_method().
+ */
+function uc_og_credit_uc_payment_method() {
+  $title = t('OG Credits');
+  $methods[] = array(
+    'id' => 'og_credits',
+    'name' => t('OG Credits'),
+    'title' => $title,
+    'desc' => t('Pay by OG credits.'),
+    'callback' => 'uc_payment_method_og_credits',
+    'weight' => 4,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+  return $methods;
+}
+
+/**
+ * Implementation of hook_uc_order().
+ */
+function uc_og_credit_uc_order($op, &$order, $arg2) {
+  $paymethod = strtolower($order->payment_method);
+  switch ($op) {
+    case 'submit':
+      // fires when the order is submitted and adds/subtracts the group's credits
+      if ($paymethod == 'og_credits') {
+        uc_og_credit_payment($order);
+      }
+      break;
+    case 'save':
+      if ($paymethod == 'og_credits' && !empty($order->payment_details['og_credit_group'])) {
+      	/*if (empty($order->payment_details['og_credit_group'])) {
+	      	$nogroup_message = variable_get('og_credit_nogroup_message', OG_CREDIT_NOGROUP_MESSAGE);
+	        //drupal_set_message($nogroup_message, 'error');
+      	}
+      	else {*/
+	        // Load up the existing data array.
+	        $order_id = $order->order_id;
+	        $data = db_query("SELECT data FROM {uc_orders} WHERE order_id = :id", array(':id' => $order_id))->fetchField();
+	        $data = unserialize($data);
+	        $og_credit_group = $order->payment_details['og_credit_group'];
+	        $data['og_credit_group'] = $og_credit_group;
+	        list($entity_type, $id) = explode('|', $og_credit_group);
+	        $data['entity_type'] = $entity_type;
+	        $data['gid'] = $id;
+	        
+	        // Save it again.
+	        db_update('uc_orders')
+	          ->fields(array('data' => serialize($data)))
+	          ->condition('order_id', $order_id)
+	          ->execute();
+      	//}
+      }
+      break;
+    case 'load':
+      // Ensure that the 
+      if (isset($order->payment_method) && $order->payment_method == 'og_credits'
+        && empty($order->payment_details)
+        && isset($order->data['og_credit_group'])
+      ) {
+        $og_credit_group = $order->data['og_credit_group'];
+        $order->payment_details['og_credit_group'] = $og_credit_group;
+        list($entity_type, $id) = explode('|', $og_credit_group);
+        $order->payment_details['gid'] = $id;
+        $order->payment_details['entity_type'] = $entity_type;
+      }
+      break;
+    case 'update':
+      // if the order is canceled we need to refund the group's credits
+      if ($arg2 == 'canceled') {
+        if (strtolower($order->payment_method) == 'og_credits') {
+          uc_og_credit_refund($order);
+        }
+      }
+      break;
+    case 'delete':	
+      if (strtolower($order->payment_method) == 'og_credits') {
+        uc_og_credit_refund($order);
+      }
+      break;
+    case 'can_delete';
+      return FALSE;
+  }
+}
+
+/*******************************************************************************
+ * Callback Functions, Forms, and Tables
+ ******************************************************************************/
+
+/**
+ * Callback for hook_uc_payment_method().
+ *
+ * @see http://api.ubercart.me/api/drupal/ubercart!payment!uc_payment!uc_payment.api.php/function/hook_uc_payment_method_callback/7
+ */
+function uc_payment_method_og_credits($op, &$order, $form = NULL, &$form_state = NULL) {
+  switch ($op) {
+    // The payment method has been selected at checkout. Return a form or render
+    // array to be displayed in the payment method pane.
+    case 'cart-details':
+      // Add the payment method form here
+      $details = uc_payment_method_og_credits_form(array(), $form_state, $order);
+      return $details;
+    
+    // Called when the user submits the checkout form with this payment method
+    // selected, used to process any form elements output by the 'cart-details'
+    // op. Return FALSE to abort the checkout process, or NULL or TRUE to
+    // continue with checkout.
+    case 'cart-process':
+      if ($form_state['values']['panes']['payment']['payment_method'] == 'og_credits') {
+      	// Throw an error if the form isn't passed with a value
+	      if (empty($form_state['values']['panes']['payment']['details']['og_credit_group'])) {
+	      	$nogroup_message = variable_get('og_credit_nogroup_message', OG_CREDIT_NOGROUP_MESSAGE);
+	        drupal_set_message($nogroup_message, 'error');
+	        return FALSE;
+	      }
+	      else {
+	        $payment_details = $form_state['values']['panes']['payment']['details'];
+	        $og_credit_group = $payment_details['og_credit_group'];
+	        $order->payment_details['og_credit_group'] = $og_credit_group;
+	        list($entity_type, $id) = explode('|', $og_credit_group);
+	        $order->payment_details['gid'] = $id;
+	        $order->payment_details['entity_type'] = $entity_type;
+	        $current_credits = og_credit_get_amount($entity_type, $id);
+	        
+	        $credit_uc_payment = variable_get(UC_OG_CREDIT_UC_PAYMENT, 1);
+	        if (module_exists('uc_multicurrencies_store')) {
+	          $target = _uc_multicurrencies_store_get_target_currency();
+	          $from = variable_get('uc_currency_code', 'USD');
+	          if ($from != $target) {
+	            $new_price = currency_api_convert($from, $target, $credit_uc_payment);
+	            $credit_uc_payment = $new_price['value'];
+	          }
+	        }
+	        $order_credits = ceil($order->order_total * $credit_uc_payment);
+	        if ($current_credits < $order_credits) {
+	          if (variable_get(UC_OG_CREDIT_PAY_DISPLAY, 1)) {
+	            // Display og_credits
+	            if (variable_get(UC_OG_CREDIT_DISPLAY, 2) == 1) {
+	              // Display currency instead of og_credits
+	              $current_credits = theme('uc_price', array('price' => $current_credits / $credit_uc_payment, 'currency' => $order->currency));
+	              $order_credits = theme('uc_price', array('price' => $order->order_total, 'currency' => $order->currency));
+	            }
+	            drupal_set_message(t('You do not have enough OG credits to complete this purchase. You have @current_credits, but you need @order_credits. Please select another payment method.', array('@current_credits' => $current_credits, '@order_credits' => $order_credits)), 'error');
+	          }
+	          else {
+	            // Hide og_credits
+	            drupal_set_message(t('You do not have enough OG credits to complete this purchase. Please select another payment method.'), 'error');
+	          }
+	          return FALSE;
+	        }
+	        else {
+	          return TRUE;
+	        }
+	        
+	      }
+      }
+      // Otherwise, attempt to process the payment
+      
+      break;
+    
+    // Called when the checkout review page is being displayed. Return an array
+    // of data to be displayed below the payment method title on the checkout
+    // review page.
+    case 'cart-review':
+      $review = array();
+      $og_name = uc_og_credit_getgroupname($order);
+      $review[] = array(
+        'title' => t('Paid by'),
+        'data' => $og_name,
+      );
+      return $review;
+      break;
+    
+    // NOTE: We display the same info to customers and admins here.
+    // Called when the order is being displayed to a customer. Return a render
+    // array to be displayed to customers.
+    case 'customer-view':
+    // Called when the order is being displayed on the order admin pages. Return
+    // a render array to be displayed to administrators.
+    case 'order-view':
+      $build = array('#suffix' => '<br />');
+      $amount_paid = uc_og_credit_getamountpaid($order);
+      $og_name = uc_og_credit_getgroupname($order);
+      $build['#markup'] = t('Paid by: ') . $og_name . '<br />' .
+        t('Amount paid: ') . og_credit_getformat($amount_paid);
+      return $build;
+      break;
+    
+    // Called when an order is being edited by an administrator. Return a string
+    // or a form array to be displayed to the administator.
+    case 'order-details':
+      // Display our payment form again
+      //$build = uc_payment_method_og_credits_form(array(), $form_state, $order);
+      //return $build;
+      break;
+    
+    // Called from hook_uc_order('load') when this payment method is selected
+    // for the order.
+    case 'order-load':
+      $order->payment_details['amount_paid'] =
+        uc_og_credit_getamountpaid($order);
+      $order->payment_details['group_name'] = uc_og_credit_getgroupname($order);
+      break;
+    
+    // Called from hook_uc_order('submit') when this payment method is selected
+    // for the order.
+    case 'order-submit':
+      if (strtolower($order->payment_method) == 'og_credits') {
+        // @todo At this point the order can be stopped if we need to check for
+        // an error condition.
+        //$result[] = array(
+        //  'pass' => FALSE,
+        //  'message' => t('INSERT MESSAGE HERE'),
+        //);
+        //$_SESSION['expanded_panes'] = 'payment';
+        //return $result;
+      }
+      break;
+    
+    // Called from hook_uc_order('save') when this payment method is selected
+    // for the order.
+    case 'order-save':
+      // @todo Not sure what we need to do here.
+      break;
+    
+    // Called when an order is being deleted. Payment methods should clean up
+    // any extra data they stored related to the order.
+    case 'order-delete':
+      // @todo Not sure what we need to do here.
+      break;
+    
+    // Called when an order has been edited by an administrator. Process any
+    // form elements returned by the "order-details" op.
+    case 'order-process':
+      // @todo Not sure what we need to do here.
+      break;
+    
+    // Called when the payment methods page is being displayed. Return a system
+    // settings form array to configure the payment method.
+    case 'settings':
+      // @todo Add a form for the payment method
+      //return $form;
+      break;
+  }
+}
+
+/**
+ * Displays the Organic Groups Credit details form on the checkout screen.
+ */
+function uc_payment_method_og_credits_form($form, &$form_state, $order) {
+  $account = user_load($order->uid);
+  $groups = og_credit_get_group_options($account);
+  
+  if (!empty($groups)) {
+    $form['og_credit_group'] = array(
+      '#type' => 'select',
+      '#title' => t('Pay with credits from this group'),
+      '#options' => $groups,
+      '#default_value' => !empty($order->payment_details['og_credit_group']) ?
+        $order->payment_details['og_credit_group'] : NULL,
+    );
+  }
+  else {
+    /*$form['og_credit_nogroup'] = array(
+      '#markup' => '<p>' . variable_get('og_credit_nogroup_message', OG_CREDIT_NOGROUP_MESSAGE) . '</p>',
+    );*/
+    $form['og_credit_group'] = array(
+      '#type' => 'select',
+      '#title' => t('Pay with credits from this group'),
+      '#options' => array('' => t('- None Available -')),
+      '#description' => variable_get('og_credit_nogroup_message', OG_CREDIT_NOGROUP_MESSAGE),
+      '#attributes' => array(
+      	'class' => array('nogroup'),
+      ),
+    );
+  }
+  
+  return $form;
+}
+
+/**
+ * Get the amount paid on an order
+ *
+ * @param object $order The UC order object.
+ *
+ * @return float The amount paid on the order, or zero if not paid.
+ */
+function uc_og_credit_getamountpaid($order) {
+  if (empty($order->order_id) || empty($order->payment_details['og_credit_group'])) {
+    return 0;
+  }
+  $amount_paid = 0;
+  $oid = $order->order_id;
+  $og_credit_group = $order->payment_details['og_credit_group'];
+  list($entity_type, $id) = explode('|', $og_credit_group);
+
+  $results = db_query(
+    "SELECT uplog_id, credits FROM {uc_og_credit_payment_log}
+      WHERE oid = :oid and gid = :gid and entity_type = :type
+    ", array(':oid' => $oid, ':gid' => $id, ':type' => $entity_type)
+  );
+  foreach ($results as $creditinfo) {
+    $amount_paid += ($creditinfo->credits);
+  }
+  
+  return (float) $amount_paid;
+}
+
+/**
+ * Get the name of the group linked to this order's payment.
+ *
+ * @param object $order The UC order object.
+ *
+ * @return string The name of the group.
+ */
+function uc_og_credit_getgroupname($order) {
+  if (empty($order->order_id) || empty($order->payment_details['og_credit_group'])) {
+    return '';
+  }
+  $name = '';
+  $og_credit_group = $order->payment_details['og_credit_group'];
+  list($entity_type, $id) = explode('|', $og_credit_group);
+  $entity = reset(entity_load($entity_type, array($id)));
+  if ($entity) {
+    $name = t(entity_label($entity_type, $entity));
+  }
+  
+  return $name;
+}
+
+function uc_og_credit_payment($order) {
+  global $user;
+  if ($order === FALSE || uc_order_status_data($order->order_status, 'state') != 'in_checkout') {
+    print t('An error has occurred during payment.  Please contact us to ensure your order has submitted.');
+    exit();
+  }
+  
+  if ($order->payment_method == 'og_credits' && !empty($order->payment_details['og_credit_group'])) {
+    list($entity_type,$id) = explode('|', $order->payment_details['og_credit_group']);
+    $credit_uc_payment = variable_get(UC_OG_CREDIT_UC_PAYMENT, 1);
+    if (module_exists('uc_multicurrencies_store')) {
+      $target = $order->currency;
+      $from = variable_get('uc_currency_code', 'USD');
+      if ($from != $target) {
+        $new_price = currency_api_convert($from, $target, $credit_uc_payment);
+        $credit_uc_payment = $new_price['value'];
+      }
+    }
+    $credits = ceil($order->order_total * $credit_uc_payment); // Reduce
+    $description = t('Order #!order_id paid with credits', array('!order_id' => $order->order_id));
+    uc_payment_enter($order->order_id, 'og_credits', $order->order_total, $user->uid, NULL, $description);
+    db_insert('uc_og_credit_payment_log')
+    ->fields(array(
+      'entity_type' => $entity_type, 
+      'gid' => $id, 
+      'oid' => $order->order_id, 
+      'credits' => $credits,
+    ))
+    ->execute();
+    $current_credits = og_credit_get_amount($entity_type, $id) - $credits;
+    og_credit_set_amount($entity_type, $id, $current_credits);
+  }
+  else {
+    // @todo Log an error
+  }
+}
+
+function uc_og_credit_refund($order) {
+  if (!empty($order->payment_details['og_credit_group'])) {
+    list($entity_type,$id) = explode('|', $order->payment_details['og_credit_group']);
+    $current_credits = og_credit_get_amount($entity_type, $id);
+    $oid  = $order->order_id;
+    $results = db_query(
+      "SELECT uplog_id, credits FROM {uc_og_credit_payment_log}
+        WHERE oid = :oid and gid = :gid and entity_type = :type
+      ", array(':oid' => $oid, ':gid' => $id, ':type' => $entity_type)
+    );
+    
+    foreach ($results as $creditinfo) {
+      $credits = ($creditinfo->credits);
+      db_delete('uc_payment_receipts')
+        ->condition('method', 'og_credits')
+        ->condition('order_id', $oid)
+        ->execute();
+      db_delete('uc_og_credit_payment_log')
+        ->condition('uplog_id', $creditinfo->uplog_id)
+        ->execute();
+      $current_credits += $credits; // Increase
+      og_credit_set_amount($entity_type, $id, $current_credits);
+    }
+  }
+  else {
+    // @todo Log an error
+  }
+}
+

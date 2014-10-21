@@ -1,0 +1,13 @@
+; $Id: bah_order_com.info
+package = "BAH Broker"
+name = BAH Broker - Order Communications
+description = "Collects information from orders to send to the provisioning engine and collection information from the provisioning engine about order fulfillment."
+version = "7.x-1.0"
+core = 7.x
+
+dependencies[] = entity
+dependencies[] = uuid
+dependencies[] = commerce_order
+dependencies[] = commerce_og_credit
+
+configure = admin/commerce/bah-order-com

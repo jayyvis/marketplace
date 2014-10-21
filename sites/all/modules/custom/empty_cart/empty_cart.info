@@ -1,0 +1,4 @@
+name = Empty cart
+description = Makes a page that helps make an empty cart
+core = 7.x
+package = other

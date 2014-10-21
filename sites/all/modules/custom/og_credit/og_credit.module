@@ -1,0 +1,368 @@
+<?php
+
+/**
+ * @file
+ * og_credit.module
+ *
+ * This module provides group-specific credits, similar to userpoints.
+ *
+ */
+
+define('OG_CREDIT_FIELD', 'og_credits');
+
+define('OG_CREDIT_NOGROUP_MESSAGE', 'You are not a member of any groups that utilize OG credits.');
+
+/**
+ * Implements hook_menu().
+ */
+function og_credit_menu() {
+  $items = array();
+  
+  $items['admin/config/group/credits'] = array(
+    'title' => t('Organic Group Credits'),
+    'description' => t('Configure Organic Group Credits settings.'),
+    'page callback' => 'og_credit_admin',
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'og_credit.admin.inc',
+  );
+  
+  return $items;
+}
+
+/**
+ * Add the og_credit field to the specified bundle
+ *
+ * @param string $entity_type The parent entity type for this bundle.
+ * @param string $bundle The name of the bundle to add the field to.
+ */
+function og_credit_addfield($entity_type, $bundle) {
+  // See if this field is already attached.
+  $bundles = og_credit_fielded_bundles();
+  if (!empty($bundles[$entity_type]) && in_array($bundle, $bundles[$entity_type])) {
+    return;
+  }
+  
+  $t = get_t();
+  $field_name = OG_CREDIT_FIELD;
+  if (!field_info_field($field_name)) {
+    $field = array(
+      'field_name' => $field_name,
+      'type' => 'text',
+      'entity_types' => array($entity_type),
+      'cardinality' => 1,
+      'locked' => FALSE, // Allow adding to other bundles
+      'settings' => array(
+        'max_length' => 255,
+      ),
+    );
+    $field = field_create_field($field);
+  }
+  //og_create_field(OG_CREDIT_FIELD, $entity_type, $bundle);
+  if (!field_info_instance($entity_type, $field_name, $bundle)) {
+    $instance = array(
+      'field_name' => $field_name,
+      'bundle' => $bundle,
+      'entity_type' => $entity_type,
+      'label' => $t('Organic Group Credit'),
+      'description' => $t('This a decimal value, since it can represent currency.'),
+      'required' => FALSE,
+    );
+    field_create_instance($instance);
+  }
+}
+
+/**
+ * Get bundles that have the OG Credit field attached
+ *
+ * @return array An array with entity_type keys and nested bundle array values.
+ */
+function og_credit_fielded_bundles() {
+  $field_info = field_info_field(OG_CREDIT_FIELD);
+  return (!empty($field_info['bundles']) && is_array($field_info['bundles'])) ?
+    $field_info['bundles'] : array();
+}
+
+/**
+ * Get the current credit amount.
+ *
+ * @param string $entity_type The type of entity to reference.
+ * @param integer $id The ID of the entity to reference.
+ *
+ * @return mixed Returns the current credit amount, or FALSE on failure.
+ */
+function og_credit_get_amount($entity_type, $id) {
+  $entity = reset(entity_load($entity_type, array($id)));
+  return (isset($entity->{OG_CREDIT_FIELD}[LANGUAGE_NONE][0]['value'])) ?
+    (float) $entity->{OG_CREDIT_FIELD}[LANGUAGE_NONE][0]['value'] :
+    FALSE;
+}
+
+/**
+ * Set the credit amount.
+ *
+ * @param string $entity_type The type of entity to reference.
+ * @param integer $id The ID of the entity to reference.
+ * @param float $amount The new amount to assign.
+ */
+function og_credit_set_amount($entity_type, $id, $amount) {
+  $entity = reset(entity_load($entity_type, array($id)));
+  $entity->{OG_CREDIT_FIELD}[LANGUAGE_NONE][0]['value'] = (float) $amount;
+  $result = entity_save($entity_type, $entity);
+  // @todo Error handling.
+}
+
+/**
+ * Get this user's groups in an $options array, per entity type
+ *
+ * @param object $account The user account to reference
+ * @param boolean $include_empty (Optional) Should we include groups that do
+ *   not have credits?  Defaults to FALSE.
+ *
+ * @return array The array prepared for a nested options array for a Form API
+ *   select field.
+ */
+function og_credit_get_group_options($account, $include_empty = FALSE) {
+  $user_groups = og_get_groups_by_user($account);
+  $groups = array();
+  foreach ((array) $user_groups as $entity_type=>$entity_ids) {
+    $option_label = t('Entity type: ') . $entity_type;
+    $entities = entity_load($entity_type, $entity_ids);
+    foreach($entities as $entity) {
+      $credits = empty($entity->{OG_CREDIT_FIELD}[LANGUAGE_NONE][0]['value']) ?
+        0 : $entity->{OG_CREDIT_FIELD}[LANGUAGE_NONE][0]['value'];
+      // Format the credits string
+      $credits = og_credit_getformat($credits);
+      if ($include_empty || !empty($credits)) {
+        list($id,$vid,$bundle) = entity_extract_ids($entity_type, $entity);
+        $key = $entity_type.'|'.$id;
+        $label = entity_label($entity_type, $entity);
+        $value = (empty($label)) ? $key : $label;
+        $value .= ' - ' . t('Available balance: ') . $credits;
+        $groups[$option_label][$entity_type.'|'.$id] = $value;
+      }
+    }
+  }
+  
+  return $groups;
+}
+
+/**
+ * Formats the credits to localized currency, if using an e-commerce module
+ *
+ * @param float $credits The number of credits
+ * @param string $currency_code The three character code of the currency.
+ *
+ * @return string A formatted value.
+ */
+function og_credit_getformat($credits, $currency_code = 'USD') {
+  $return = '';
+  $credits = (float) $credits;
+  if (function_exists('uc_currency_format')) {
+    $return = uc_currency_format($credits);
+  }
+  elseif (function_exists('commerce_currency_format')) {
+    // Note: We do not convert our source currency value, which should already
+    // reflect a USD amount.  This could change in the future.
+    $return = commerce_currency_format($credits, $currency_code, NULL, FALSE);
+  }
+  else {
+    $return = number_format($credits, 2, '.', ',') . t(' credits');
+  }
+  
+  return $return;
+}
+
+
+
+ 
+// @todo Replace CRUD functions and form_alter with proper field api ties
+//  to the OG entities
+// @todo Create a field on the OG entity
+// @see http://drupal.stackexchange.com/questions/8284/programmatically-create-fields-in-drupal-7
+// @see https://drupal.org/node/1228878
+// @see https://drupal.org/node/1404344
+
+// @todo Add an admin settings page to allow for configuration of points to
+//  currency value mapping.
+
+///**
+// * Implements hook_permission().
+// */
+//function og_credit_permission() {
+//  return array(
+//    'modify all og_credit values' => array(
+//      'title' => t('Modify all Organic Group Credit values'),
+//      'description' => '',
+//    ),
+//    'view own group og_credit values' => array(
+//      'title' => t('View own Organic Group Credit values'),
+//      'description' => '',
+//    ),
+//  );
+//}
+//
+///**
+// * Implements hook_og_permission().
+// */
+//function og_credit_og_permission() {
+//  return array(
+//    'modify group og_credit value' => array(
+//      'title' => t('Modify Organic Group Credit values'),
+//      'description' => '',
+//      'roles' => array(OG_ADMINISTRATOR_ROLE),
+//    ),
+//    'view group og_credit value' => array(
+//      'title' => t('View Organic Group Credit values'),
+//      'description' => '',
+//      'roles' => array(OG_AUTHENTICATED_ROLE, OG_ADMINISTRATOR_ROLE),
+//    ),
+//  );
+//}
+//
+///**
+// * Implements hook_field_access().
+// *
+// * Hide og_credit fields from user's edit profile for non-privileged users.
+// */
+//// Stub
+//
+///**
+// * Implements hook_entity_view().
+// */
+//function og_credit_entity_view($entity, $type, $view_mode, $langcode) {
+//  $og_entities = og_get_all_group_entity();
+//  $add_field = FALSE;
+//  if (in_array($type, $og_entities)
+//    && (user_access('view own og_credit values')
+//      || og_user_access_entity('view group og_credit value', $type, $entity))
+//  ) {
+//    $og_bundles = og_get_all_group_bundle();
+//    if ($type == 'node' && !empty($entity->type)
+//      && in_array($entity->type, $og_bundles)) {
+//      $add_field = TRUE;
+//    }
+//    
+//    // @todo Handle other entity types and bundles
+//    
+//    if ($add_field) {
+//      // @todo Add the field to the entity's render array
+//      
+//    }
+//  }  
+//}
+//
+//// @todo Create a form_alter to add the field to the other OG entity forms
+//
+///**
+// * Implements hook_form_FORM_ID_alter().
+// */
+//function og_credit_form_node_form_alter(&$form, &$form_state) {
+//  $og_bundles = og_get_all_group_bundle();
+//  if (!empty($form['#node']->type)) {
+//    $node = $form['#node'];
+//    if (in_array($form['#node']->type, $og_bundles)
+//      && (user_access('modify all og_credit values')
+//        || og_user_access_entity('modify group og_credit value', 'node', $node))
+//    ) {
+//      // @todo Add the form field
+//      // @todo Add a form validator
+//      // @todo Add a submit handler
+//    }
+//  }
+//}
+//
+//// ----- CRUD functions for field data ----- //
+//
+///**
+// * Write the new/updated og_credit value for this group.
+// *
+// * @param integer $gid The group ID.
+// * @param float $value The og_credit value to add/update.
+// */
+//function og_credit_set($gid, $value) {
+//  $current_value = og_credit_get($gid);
+//  
+//  if ($current_value === FALSE) {
+//    db_insert('og_credit')
+//      ->fields(array(
+//        'gid' => $gid,
+//        'value' => $value,
+//      ))
+//      ->execute();
+//  }
+//  else {
+//    db_update('og_credit')
+//      ->condition('gid', $gid)
+//      ->fields(array(
+//        'value' => $value,
+//      ))
+//      ->execute();
+//  }
+//}
+//
+///**
+// * Read the og_credit value for this group.
+// *
+// * @param integer $gid The group ID to reference.
+// *
+// * @return float The og_credit value for this group, or FALSE on failed lookup.
+// */
+//function og_credit_get($gid) {
+//  static $values = array();
+//  
+//  if (!isset($values[$gid])) {
+//    $result = db_query('SELECT `value` FROM {og_credit} WHERE `gid` = :gid',
+//      array(':gid' => $gid)
+//    );
+//    
+//    $value = $result->fetchField();
+//    if ($value === FALSE) {
+//      return FALSE;
+//    }
+//    
+//    $values[$gid] = $value;
+//  }
+//  
+//  return $values[$gid];
+//}
+//
+///**
+// * Delete the record for this group.
+// * @todo Add a call to this in hook_group_delete().
+// *
+// * @param integer $gid The group ID to reference.
+// */
+//function og_credit_del($gid) {
+//  db_delete('og_credit')
+//    ->condition('gid', $gid)
+//    ->execute();
+//}
+
+/**
+ * Get the human-readable name of the group.
+ *
+ * @param string $entity_type The type of entity to reference.
+ * @param integer $id The entity's ID.
+ *
+ * @return string The name of the group.
+ */
+function og_credit_getgroupname($entity_type, $id) {
+  $entity = og_credit_getgroup($entity_type, $id);
+  return ($entity) ? t(entity_label($entity_type, $entity)) : '';
+}
+
+
+/**
+ * Get the group entity.
+ *
+ * @param string $entity_type The type of entity to reference.
+ * @param integer $id The entity's ID.
+ *
+ * @return object The group entity.
+ */
+function og_credit_getgroup($entity_type, $id) {
+  $entity = reset(entity_load($entity_type, array($id)));
+  return $entity;
+}
+

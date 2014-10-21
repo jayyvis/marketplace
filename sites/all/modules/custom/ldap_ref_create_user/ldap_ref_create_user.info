@@ -1,0 +1,10 @@
+; $Id: ldap_ref_create_user.info
+package = "Lightweight Directory Access Protocol"
+name = LDAP Reference Create User
+description = "Creates new Drupal user from an LDAP ref when a node is saved"
+version = "7.x-1.x-dev"
+core = 7.x
+
+dependencies[] = ldap_entry_reference
+dependencies[] = ldap_user
+dependencies[] = entity

@@ -1,0 +1,101 @@
+<?php
+/**
+ * @file
+ * content_type.project_req.inc
+ */
+
+$api = '2.0.0';
+
+$data = (object) array(
+  'type' => 'project_req',
+  'name' => 'Project Request',
+  'description' => '',
+  'has_title' => '1',
+  'title_label' => 'Title',
+  'base' => 'node_content',
+  'help' => '',
+);
+
+$dependencies = array(
+  'variable.field_bundle_settings_node__project_req' => 'variable.field_bundle_settings_node__project_req',
+  'variable.node_options_project_req' => 'variable.node_options_project_req',
+  'variable.node_preview_project_req' => 'variable.node_preview_project_req',
+  'variable.node_submitted_project_req' => 'variable.node_submitted_project_req',
+);
+
+$optional = array(
+  'field.node.body.project_req' => 'field.node.body.project_req',
+  'field.node.field_cust_code.project_req' => 'field.node.field_cust_code.project_req',
+  'field.node.field_appl_name.project_req' => 'field.node.field_appl_name.project_req',
+  'field.node.field_appl_desc.project_req' => 'field.node.field_appl_desc.project_req',
+  'field.node.field_appl_locn.project_req' => 'field.node.field_appl_locn.project_req',
+  'field.node.field_fisma_name_f.project_req' => 'field.node.field_fisma_name_f.project_req',
+  'field.node.field_fisma_name_l.project_req' => 'field.node.field_fisma_name_l.project_req',
+  'field.node.field_fisma_phone.project_req' => 'field.node.field_fisma_phone.project_req',
+  'field.node.field_sys_name_f.project_req' => 'field.node.field_sys_name_f.project_req',
+  'field.node.field_sys_name_l.project_req' => 'field.node.field_sys_name_l.project_req',
+  'field.node.field_sys_phone.project_req' => 'field.node.field_sys_phone.project_req',
+  'field.node.field_eo_name_f.project_req' => 'field.node.field_eo_name_f.project_req',
+  'field.node.field_eo_name_l.project_req' => 'field.node.field_eo_name_l.project_req',
+  'field.node.field_eo_phone.project_req' => 'field.node.field_eo_phone.project_req',
+  'field.node.field_oed_name_f.project_req' => 'field.node.field_oed_name_f.project_req',
+  'field.node.field_oed_name_l.project_req' => 'field.node.field_oed_name_l.project_req',
+  'field.node.field_oed_phone.project_req' => 'field.node.field_oed_phone.project_req',
+  'field.node.field_notif_list.project_req' => 'field.node.field_notif_list.project_req',
+  'field.node.field_depndt_appl.project_req' => 'field.node.field_depndt_appl.project_req',
+  'field.node.field_nbr_vets_afctd.project_req' => 'field.node.field_nbr_vets_afctd.project_req',
+  'field.node.field_nbr_empl_afctd.project_req' => 'field.node.field_nbr_empl_afctd.project_req',
+  'field.node.field_org_afctd.project_req' => 'field.node.field_org_afctd.project_req',
+  'field.node.field_appl_stat.project_req' => 'field.node.field_appl_stat.project_req',
+  'field.node.field_appl_mf_serv.project_req' => 'field.node.field_appl_mf_serv.project_req',
+  'field.node.field_appl_mong_serv.project_req' => 'field.node.field_appl_mong_serv.project_req',
+  'field.node.field_appl_bu_serv.project_req' => 'field.node.field_appl_bu_serv.project_req',
+  'field.node.field_appl_sql_serv.project_req' => 'field.node.field_appl_sql_serv.project_req',
+  'field.node.field_appl_web_serv.project_req' => 'field.node.field_appl_web_serv.project_req',
+  'field.node.field_appl_rdc_serv.project_req' => 'field.node.field_appl_rdc_serv.project_req',
+  'field.node.field_info_type.project_req' => 'field.node.field_info_type.project_req',
+  'field.node.field_cust_acronym.project_req' => 'field.node.field_cust_acronym.project_req',
+  'field.node.field_cust_code_mcc.project_req' => 'field.node.field_cust_code_mcc.project_req',
+  'field.node.field_pm_name_f.project_req' => 'field.node.field_pm_name_f.project_req',
+  'field.node.field_pm_name_l.project_req' => 'field.node.field_pm_name_l.project_req',
+  'field.node.field_pm_phone.project_req' => 'field.node.field_pm_phone.project_req',
+  'field.node.field_ccc_exist.project_req' => 'field.node.field_ccc_exist.project_req',
+  'field.node.field_ccc_locn.project_req' => 'field.node.field_ccc_locn.project_req',
+  'field.node.field_ccc_mcc.project_req' => 'field.node.field_ccc_mcc.project_req',
+  'field.node.field_ccc_name.project_req' => 'field.node.field_ccc_name.project_req',
+  'field.node.field_bo_name_f.project_req' => 'field.node.field_bo_name_f.project_req',
+  'field.node.field_bo_name_l.project_req' => 'field.node.field_bo_name_l.project_req',
+  'field.node.field_bo_phone.project_req' => 'field.node.field_bo_phone.project_req',
+  'field.node.field_appl_fund_src.project_req' => 'field.node.field_appl_fund_src.project_req',
+  'field.node.field_bus_cont_lvl.project_req' => 'field.node.field_bus_cont_lvl.project_req',
+  'field.node.field_bus_cont_plan.project_req' => 'field.node.field_bus_cont_plan.project_req',
+  'field.node.field_rto.project_req' => 'field.node.field_rto.project_req',
+  'field.node.field_rpo.project_req' => 'field.node.field_rpo.project_req',
+  'field.node.field_rec_meth.project_req' => 'field.node.field_rec_meth.project_req',
+  'field.node.field_appl_type.project_req' => 'field.node.field_appl_type.project_req',
+  'field.node.field_appl_func_type.project_req' => 'field.node.field_appl_func_type.project_req',
+  'field.node.field_ato_date.project_req' => 'field.node.field_ato_date.project_req',
+  'field.node.field_fisma_class.project_req' => 'field.node.field_fisma_class.project_req',
+  'field.node.field_sec_plan.project_req' => 'field.node.field_sec_plan.project_req',
+  'field.node.field_isa_exist.project_req' => 'field.node.field_isa_exist.project_req',
+  'field.node.field_isa_req.project_req' => 'field.node.field_isa_req.project_req',
+  'field.node.field_sec_name_f.project_req' => 'field.node.field_sec_name_f.project_req',
+  'field.node.field_sec_name_l.project_req' => 'field.node.field_sec_name_l.project_req',
+  'field.node.field_sec_phone.project_req' => 'field.node.field_sec_phone.project_req',
+  'field.node.field_sprt_ctc.project_req' => 'field.node.field_sprt_ctc.project_req',
+  'field.node.field_proj_file.project_req' => 'field.node.field_proj_file.project_req',
+  'field.node.field_proj_req_state.project_req' => 'field.node.field_proj_req_state.project_req',
+  'field.node.field_add_cont.project_req' => 'field.node.field_add_cont.project_req',
+  'field.node.field_credit_limit.project_req' => 'field.node.field_credit_limit.project_req',
+  'field.node.field_appl_runinprod.project_req' => 'field.node.field_appl_runinprod.project_req',
+  'field.node.field_est_fund.project_req' => 'field.node.field_est_fund.project_req',
+  'permission.create_project_req_content' => 'permission.create_project_req_content',
+  'permission.edit_own_project_req_content' => 'permission.edit_own_project_req_content',
+  'permission.edit_any_project_req_content' => 'permission.edit_any_project_req_content',
+  'permission.delete_own_project_req_content' => 'permission.delete_own_project_req_content',
+  'permission.delete_any_project_req_content' => 'permission.delete_any_project_req_content',
+);
+
+$modules = array(
+  0 => 'node',
+);

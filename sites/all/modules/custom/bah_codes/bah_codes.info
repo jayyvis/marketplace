@@ -1,0 +1,10 @@
+package = "BAH Broker"
+name = BAH Broker - Location Code Handler
+description = "For populating the OG's and taxonomy terms for the dropdowns in checkout for Location Code."
+core = 7.x
+version = 7.x-1.x-dev
+
+dependencies[] = taxonomy
+dependencies[] = og
+dependencies[] = uc_cart
+dependencies[] = uc_order

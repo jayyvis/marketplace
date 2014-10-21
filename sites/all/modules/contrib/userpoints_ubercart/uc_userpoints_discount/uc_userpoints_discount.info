@@ -1,0 +1,11 @@
+name = Userpoints Discounts
+description = Interfaces userpoints with ubercart, so users discount final price with points.
+package = Userpoints
+dependencies[] = userpoints
+dependencies[] = uc_order
+dependencies[] = uc_cart
+dependencies[] = uc_payment
+core = 7.x
+php = 5.x
+
+

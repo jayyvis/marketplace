@@ -1,0 +1,52 @@
+<?php
+
+/**
+* Implementation of hook_uninstall().
+*/
+function uc_og_credit_uninstall() {
+  // Remove variables
+  variable_del('uc_og_credit_payment');
+  variable_del('uc_og_credit_display');
+  variable_del('uc_og_credit_pay_moderate');
+  variable_del('uc_og_credit_pay_category');
+}
+
+/**
+ * Define the database scheme for hook_schema().
+ */
+function uc_og_credit_schema() {
+  $schema['uc_og_credit_payment_log'] = array(
+    'fields' => array(
+      'uplog_id' => array(
+        'type' => 'serial', 
+        'not null' => TRUE,
+      ),
+      'entity_type' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE, 
+        'default' => 0,
+      ),
+      'gid' => array(
+        'type' => 'int', 
+        'not null' => TRUE, 
+        'default' => 0,
+      ),
+      'oid' => array(
+        'type' => 'int', 
+        'not null' => TRUE, 
+        'default' => 0,
+      ),
+      'credits' => array(
+        'description' => 'The total amount paid for the order.',
+        'type' => 'numeric',
+        'precision' => 16,
+        'scale' => 5,
+        'not null' => TRUE,
+        'default' => 0.0,
+      ),
+    ),
+    'primary key' => array('uplog_id'),
+  );
+  return $schema;
+}

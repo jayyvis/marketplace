@@ -1,0 +1,10 @@
+name = Userpoints Seller Points
+description = Provides necessary modifications to award a seller points when a product is purchased
+dependencies[] = userpoints
+dependencies[] = uc_order
+dependencies[] = uc_cart
+dependencies[] = uc_payment
+package = Userpoints
+core = 7.x
+php = 5.x 
+

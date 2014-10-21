@@ -1,0 +1,6 @@
+name = Backtrace Info
+description = Provides a backtrace for all errors.  This module borrows its code from the commerce_devel module.
+package = Development
+core = 7.x
+
+version = "7.x-1.x-dev"

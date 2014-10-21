@@ -1,0 +1,139 @@
+<?php
+
+function bah_display_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'uc_cart_view_form') {
+    // $form['items']['#columns']['qty']['cell'] = '<abbr title="Quantity">Months</abbr>';
+    foreach ($form['items'] as $key=>$item) {
+      if (isset($item['total']) && is_array($item['total'])) {
+        $form['items'][$key]['total']['#prefix'] = '<span id="subtotal-title">Total Cost:</span>';
+      }
+    }
+    $form['items']['#columns']['desc']['cell'] = 'Description';
+    /*
+unset($form['items']['#columns']['image']);
+    unset($form['items']['#columns']['qty']);
+    unset($form['items']['#columns']['total']);
+*/
+  }
+}
+
+function bah_display_views_pre_render(&$view) {
+  // Scramble the order of the rows shown on this result page.
+  // Note that this could be done earlier, but not later in the view execution
+  // process.
+
+  $order_product_id = intval((empty($view->result[0]->order_product_id)
+    ? '' : $view->result[0]->order_product_id));
+
+  if (!empty($view->relationship['order_id']->view->argument['order_id']->value[0])) {
+    $orders = uc_order_load($view->relationship['order_id']->view->argument['order_id']->value[0])->products;
+
+    foreach ($orders as $op_id=>$order) {
+      $markup = t('');
+      foreach ($order->order->products as $sub_op_id=>$product) {
+        $ps = array(
+          'order_product_id' => $product->order_product_id,
+          'nid' => $product->nid,
+          'model' => $product->model,
+          'title' => $product->title,
+          'type' => $product->data['type'],
+          'status' => (empty($product->data['status']))
+              ? 'Pending' : $product->data['status'],
+          'description' => (empty($product->data['description']))
+              ? '' : $product->data['description'],
+          'cloudforms_guid' => (empty($product->data['cloudforms_guid']))
+              ? '' : $product->data['cloudforms_guid'],
+          'fqdn' => (empty($product->data['fqdn']))
+              ? 'Host name pending' : $product->data['fqdn'],
+          // @todo Add fields for other product types.
+        );
+        $markup .= t('<table class="myAcct">
+                    <thead>
+                      <tr>
+                        <th rel="one">Service:</th>
+                        <td rel="service">' . $ps['title'] . '</td>
+                      </tr>
+                      <tr>
+                        <th rel="two">Description:</th>
+                        <td rel="desc">' . $ps['description'] . '</td>
+                      </tr>
+                      <tr>
+                        <th rel="four">Status:</th>
+                        <td rel="' . $ps['status'] . '">' . $ps['status'] . '</td>
+                      </tr>
+                      <tr>
+                        <th rel="ipAdd">Hostname:</th>
+                        <td rel="ipInt">' . $ps['fqdn'] . '</td>
+                      </tr>
+                    </thead>
+                  </table>');
+
+        $view->field['rendered_entity_1']->view->display_handler->view->attachment_after = $markup;
+      }
+    }
+  }
+}
+
+function bah_display_uc_cart_block_content($variables) {
+  $help_text = $variables['help_text'];
+  $items = $variables['items'];
+  $item_count = $variables['item_count'];
+  $item_text = $variables['item_text'];
+  $total = $variables['total'];
+  $summary_links = $variables['summary_links'];
+  $collapsed = $variables['collapsed'];
+
+  $output = t('');
+  if (!empty($items)) {
+    foreach ($items as $key=>$item) {
+      $items[$key]['title'] = $key+1 . '.  ' . $item['title'];
+    }
+  }
+
+  // Add the help text if enabled.
+  if ($help_text) {
+    $output .= t('<span class="cart-help-text">' . $help_text . '</span>');
+  }
+
+  // Add a table of items in the cart or the empty message.
+  $output .= theme('uc_cart_block_items', array('items' => $items, 'collapsed' => $collapsed));
+
+  // Add the summary section beneath the items table.
+  $output .= theme('uc_cart_block_summary', array('item_count' => $item_count, 'item_text' => $item_text, 'total' => $total, 'summary_links' => $summary_links));
+
+  return $output;
+}
+
+function bah_display_uc_cart_block_summary($variables) {
+  $item_count = $variables['item_count'];
+  $item_text = $variables['item_text'];
+  $total = $variables['total'];
+  $summary_links = $variables['summary_links'];
+
+  if (!empty($summary_links['cart-block-view-cart'])) {
+    unset($summary_links['cart-block-view-cart']);
+  }
+
+  // Build the basic table with the number of items in the cart and total.
+  $output = t('<table class="cart-block-summary"><tbody>'
+    . '<tr>'
+    . '<td class="cart-block-summary-header">Total Cost:</td>'
+    . '</tr>'
+    . '<tr>'
+    . '<td class="cart-block-summary-total">');
+
+  $output .= theme('uc_price', array('price' => $total));
+  $output .= t('</td></tr>');
+
+  // If there are products in the cart...
+  if ($item_count > 0) {
+    // Add a view cart link.
+    $output .= t('<tr class="cart-block-summary-links"><td colspan="2">');
+    $output .= theme('links', array('links' => $summary_links));
+    $output .= t('</td></tr>');
+  }
+
+  $output .= t('</tbody></table>');
+
+  return $output;
+}

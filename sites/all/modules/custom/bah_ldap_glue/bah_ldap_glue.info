@@ -1,0 +1,10 @@
+; $Id: bah_ldap_glue.info
+package = "BAH Broker"
+name = BAH LDAP Glue
+description = "Helper functions to support the BAH LDAP workflow"
+version = "7.x-1.x-dev"
+core = 7.x
+
+dependencies[] = ldap_entry_reference
+dependencies[] = ldap_user
+dependencies[] = entity

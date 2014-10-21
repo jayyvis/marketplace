@@ -1,0 +1,14 @@
+<?php
+/**
+ * @file bah_mod_postrun.module
+ *
+ * This module exists to do data processing after other modules have done
+ * their work.
+ */
+
+function bah_mod_postrun_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'project_node_form') {
+    $form['purl']['value']['#required'] = FALSE;
+    $form['purl']['value']['#access'] = FALSE;
+  }
+}
