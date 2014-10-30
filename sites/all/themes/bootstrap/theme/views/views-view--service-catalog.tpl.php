@@ -16,6 +16,11 @@ $product    = commerce_product_load($node->field_product["und"][0]["product_id"]
 $cost       = $product->commerce_price["und"][0]["amount"]/100;
 $currency   = $product->commerce_price["und"][0]["currency_code"];
 
+$temp = field_get_items('node', $node, 'field_server_image', $node->language);
+//var_dump($temp);
+$img = $temp[0]['filename']
+//$img = field_get_items('node', $node, $var, $node->language);
+
 ?>
 
 
@@ -56,7 +61,7 @@ $currency   = $product->commerce_price["und"][0]["currency_code"];
                 <h3 class="panel-title"><?php echo $item->node_title ?></h3></div>
                 <div class="panel-body" style="min-height: 300px">
                     <a href="<?php echo $url; ?>">
-                       <p class="text-center"> <img height="130" width="130" src="/sites/default/files/<?php echo $node->field_server_image['und'][0]['filename'] ?>"></p>
+                       <p class="text-center"> <img height="130" width="130" src="/sites/default/files/<?php echo $img ?>"></p>
                     </a>
                     <p><small><?php echo $node->body['und'][0]['value'] ?></small></p>
                 </div>

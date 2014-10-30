@@ -11,15 +11,15 @@ function template_preprocess_spaces_features_form(&$vars) {
     foreach (element_children($form['spaces_features']) as $feature) {
       $rows[] = array(
         array(
-          'class' => 'label',
+          'class' => '',
           'data' => $form['labels'][$feature],
         ),
         array(
-          'class' => 'option',
+          'class' => '',
           'data' => $form['spaces_features'][$feature],
         ),
         array(
-          'class' => 'actions',
+          'class' => '',
           'data' => $form['settings'][$feature],
         ),
       );
@@ -68,7 +68,7 @@ function template_preprocess_spaces_preset_form(&$variables) {
       'data' => $form["spaces_preset_{$type}"][$preset],
     );
     $row[] = array(
-      'class' => array('label'),
+      'class' => array(''),
       'data' => $form['labels'][$preset],
     );
     if (isset($form['storage'][$preset])) {
